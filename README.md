@@ -1,6 +1,5 @@
 # Munching-2
 -
-</div>
 Dunia sedang berada dalam kehancuran. Lord Munching, monster terkuat membuat dunia porak poranda muncul kembali. Banyak orang yang mencoba mengalahkan Lord Munching di Menaranya. Sayangnya tidak ada yang berhasil. Apakah kamu siap menyelamatkan dunia?
 </div>
 Tujuan akhir pemain adalah </b>mengalahkan Lord Munchin</b> di level 10 menaranya.
