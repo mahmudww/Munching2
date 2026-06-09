@@ -19,3 +19,7 @@ Kamu akan kalah kalau </b>level kamu kurang dari 1</b>.
 Item yang sama akan </b>memperkuat item tersebut secara otomatis</b>.
 
 Item yang bisa di bawa pemain hanya </b>5 buah item</b>.
+
+
+
+Main di sini: https://mahmudww.github.io/Munching2/
