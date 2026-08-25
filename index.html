@@ -1,162 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#080808">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>MUNCHING 2 — The Return of Lord Munching</title>
 
-    <meta
-        name="theme-color"
-        content="#0a0a0a"
-    >
-
-    <title>MUNCHING 2</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
+    <!-- =========================================================
+         START / RACE SELECTION
+    ========================================================== -->
 
-    <!-- =====================================================
-         START SCREEN
-    ====================================================== -->
+    <div id="overlay" class="screen-overlay">
 
-    <div
-        id="overlay"
-        class="overlay"
-    >
-
-        <div class="start-container">
+        <div class="start-content">
 
             <div class="game-logo">
-                ⚔️
+                <span>⚔️</span>
+                <h1>MUNCHING 2</h1>
+                <span>⚔️</span>
             </div>
-
-            <h1 class="game-title">
-                MUNCHING 2
-            </h1>
 
             <p class="game-subtitle">
                 THE RETURN OF LORD MUNCHING
             </p>
 
+            <p class="start-description">
+                Choose your race and survive the dungeon.
+            </p>
 
             <div class="race-selection">
 
                 <!-- ORC -->
-
-                <div
-                    class="race-card orc-card"
+                <button
+                    class="race-card race-orc"
                     onclick="initGame('Orc')"
+                    type="button"
                 >
+                    <span class="race-icon">👹</span>
 
-                    <div class="race-icon">
-                        👹
-                    </div>
+                    <span class="race-name">ORC</span>
 
-                    <h2>
-                        ORC
-                    </h2>
+                    <span class="race-description">
+                        The brutal warrior.
+                    </span>
 
-                    <p class="race-description">
-                        Strong and aggressive.
-                    </p>
-
-                    <div class="race-stats">
-
-                        <span>
-                            💥 +5 Base ATK
-                        </span>
-
-                        <span>
-                            🔥 Berserk
-                        </span>
-
-                    </div>
-
-                </div>
+                    <span class="race-stats">
+                        <span>⚔️ +5 Base ATK</span>
+                        <span>🔥 Berserk</span>
+                    </span>
+                </button>
 
 
                 <!-- ELF -->
-
-                <div
-                    class="race-card elf-card"
+                <button
+                    class="race-card race-elf"
                     onclick="initGame('Elf')"
+                    type="button"
                 >
+                    <span class="race-icon">🧝</span>
 
-                    <div class="race-icon">
-                        🧝
-                    </div>
+                    <span class="race-name">ELF</span>
 
-                    <h2>
-                        ELF
-                    </h2>
+                    <span class="race-description">
+                        The agile survivor.
+                    </span>
 
-                    <p class="race-description">
-                        Agile and lucky.
-                    </p>
-
-                    <div class="race-stats">
-
-                        <span>
-                            💥 +2 Base ATK
-                        </span>
-
-                        <span>
-                            👟 Run +1
-                        </span>
-
-                    </div>
-
-                </div>
+                    <span class="race-stats">
+                        <span>⚔️ +2 Base ATK</span>
+                        <span>👟 +1 Escape Roll</span>
+                    </span>
+                </button>
 
 
                 <!-- DWARF -->
-
-                <div
-                    class="race-card dwarf-card"
+                <button
+                    class="race-card race-dwarf"
                     onclick="initGame('Dwarf')"
+                    type="button"
                 >
+                    <span class="race-icon">🧔</span>
 
-                    <div class="race-icon">
-                        🧔
-                    </div>
+                    <span class="race-name">DWARF</span>
 
-                    <h2>
-                        DWARF
-                    </h2>
+                    <span class="race-description">
+                        The master of equipment.
+                    </span>
 
-                    <p class="race-description">
-                        Tough and resourceful.
-                    </p>
-
-                    <div class="race-stats">
-
-                        <span>
-                            💥 +2 Base ATK
-                        </span>
-
-                        <span>
-                            🔨 Item Bonus +1
-                        </span>
-
-                    </div>
-
-                </div>
+                    <span class="race-stats">
+                        <span>⚔️ +2 Base ATK</span>
+                        <span>🔨 Item Bonus</span>
+                    </span>
+                </button>
 
             </div>
 
-
-            <p class="selection-hint">
+            <p class="start-hint">
                 Choose your race to begin your adventure.
             </p>
 
@@ -165,38 +109,33 @@
     </div>
 
 
-
-    <!-- =====================================================
-         ITEM SWAP SCREEN
-    ====================================================== -->
+    <!-- =========================================================
+         INVENTORY SWAP SCREEN
+    ========================================================== -->
 
     <div
         id="swap-screen"
-        class="overlay"
-        style="display: none;"
+        class="screen-overlay hidden"
     >
 
-        <div class="modal-card">
+        <div class="modal-card inventory-modal">
 
             <div class="modal-icon">
                 🎒
             </div>
 
-            <h2>
-                INVENTORY FULL
-            </h2>
+            <h2>INVENTORY FULL</h2>
 
             <p>
                 Choose an item to replace with:
             </p>
 
-            <div
+            <strong
                 id="new-item-name"
                 class="new-item-preview"
             >
                 New Item
-            </div>
-
+            </strong>
 
             <div
                 id="swap-list"
@@ -204,12 +143,12 @@
             >
             </div>
 
-
             <button
-                class="btn-dark"
+                class="btn btn-dark modal-cancel"
                 onclick="cancelSwap()"
+                type="button"
             >
-                🗑️ DISCARD
+                🗑️ DISCARD NEW ITEM
             </button>
 
         </div>
@@ -217,34 +156,31 @@
     </div>
 
 
-
-    <!-- =====================================================
+    <!-- =========================================================
          DEATH SCREEN
-    ====================================================== -->
+    ========================================================== -->
 
     <div
         id="death-screen"
-        class="overlay"
-        style="display: none;"
+        class="screen-overlay hidden"
     >
 
-        <div class="result-card death-card">
+        <div class="modal-card death-modal">
 
-            <div class="result-icon">
+            <div class="modal-icon">
                 💀
             </div>
 
-            <h1>
-                YOU DIED
-            </h1>
+            <h1>YOU DIED</h1>
 
             <p id="death-reason">
                 Your adventure has come to an end.
             </p>
 
             <button
-                class="btn-red"
+                class="btn btn-red"
                 onclick="location.reload()"
+                type="button"
             >
                 ♻️ TRY AGAIN
             </button>
@@ -254,38 +190,31 @@
     </div>
 
 
-
-    <!-- =====================================================
+    <!-- =========================================================
          VICTORY SCREEN
-    ====================================================== -->
+    ========================================================== -->
 
     <div
         id="win-screen"
-        class="overlay"
-        style="display: none;"
+        class="screen-overlay hidden"
     >
 
-        <div class="result-card victory-card">
+        <div class="modal-card victory-modal">
 
-            <div class="result-icon">
+            <div class="modal-icon">
                 🏆
             </div>
 
-            <h1>
-                VICTORY
-            </h1>
+            <h1>VICTORY</h1>
 
             <p>
                 LORD MUNCHING HAS FALLEN!
             </p>
 
-            <p class="victory-subtext">
-                You survived the dungeon.
-            </p>
-
             <button
-                class="btn-gold"
+                class="btn btn-gold"
                 onclick="location.reload()"
+                type="button"
             >
                 🔄 PLAY AGAIN
             </button>
@@ -295,161 +224,165 @@
     </div>
 
 
-
-    <!-- =====================================================
+    <!-- =========================================================
          MAIN GAME
-    ====================================================== -->
+    ========================================================== -->
 
-    <main
-        class="game-wrapper"
-        id="game-wrapper"
-    >
+    <main class="game-wrapper">
 
 
-        <!-- =================================================
-             LEFT PANEL
-        ================================================== -->
+        <!-- =====================================================
+             PLAYER PANEL
+        ====================================================== -->
 
         <aside class="panel player-panel">
 
+            <!-- Mobile / Desktop Header -->
+            <div class="player-header">
 
-            <!-- HERO -->
+                <div class="player-identity">
 
-            <div class="stats-box hero-stat">
+                    <div class="player-avatar">
+                        👤
+                    </div>
 
-                <small>
-                    👤 HERO
-                </small>
+                    <div>
+                        <span class="stat-label">
+                            HERO
+                        </span>
 
-                <strong id="ui-race">
-                    -
-                </strong>
+                        <strong
+                            id="ui-race"
+                            class="player-race"
+                        >
+                            -
+                        </strong>
+                    </div>
 
-            </div>
-
-
-            <!-- LEVEL -->
-
-            <div class="stats-box level-stat">
-
-                <small>
-                    ⭐ LEVEL
-                </small>
-
-                <strong
-                    id="ui-level"
-                    class="level-value"
-                >
-                    1
-                </strong>
+                </div>
 
             </div>
 
 
-            <!-- ATTACK -->
+            <!-- Main Stats -->
+            <div class="compact-stats">
 
-            <div class="stats-box attack-stat">
+                <!-- LEVEL -->
+                <div class="stat-card level-stat">
 
-                <small>
-                    💥 TOTAL POWER
-                </small>
+                    <span class="stat-label">
+                        ⭐ LEVEL
+                    </span>
 
-                <span
-                    id="ui-atk"
-                    class="atk-val"
-                >
-                    0
-                </span>
+                    <strong
+                        id="ui-level"
+                        class="level-value"
+                    >
+                        1
+                    </strong>
+
+                </div>
+
+
+                <!-- ATTACK -->
+                <div class="stat-card attack-stat">
+
+                    <span class="stat-label">
+                        ⚔️ POWER
+                    </span>
+
+                    <strong
+                        id="ui-atk"
+                        class="atk-val"
+                    >
+                        0
+                    </strong>
+
+                </div>
 
             </div>
 
 
-            <!-- DIVIDER -->
-
-            <div class="panel-divider"></div>
-
-
-            <!-- INVENTORY -->
-
+            <!-- Inventory Header -->
             <div class="inventory-header">
 
-                <strong>
-                    🎒 INVENTORY
-                </strong>
+                <div>
+                    <span class="inventory-title">
+                        🎒 INVENTORY
+                    </span>
 
-                <span id="inventory-count">
-                    0 / 5
-                </span>
+                    <span
+                        id="inventory-count"
+                        class="inventory-count"
+                    >
+                        0/5
+                    </span>
+                </div>
 
             </div>
 
 
+            <!-- Inventory -->
             <div
                 id="ui-inv"
-                class="inventory-list"
+                class="inventory-container"
             >
-
-                <div class="inv-slot empty-slot">
+                <div class="inv-empty">
                     Empty
                 </div>
-
-            </div>
-
-
-            <!-- RACE PASSIVE -->
-
-            <div
-                id="passive-display"
-                class="passive-box"
-            >
-
-                <small>
-                    PASSIVE
-                </small>
-
-                <div id="passive-text">
-                    Choose a race to begin.
-                </div>
-
             </div>
 
 
         </aside>
 
 
+        <!-- =====================================================
+             MAIN ARENA
+        ====================================================== -->
 
-        <!-- =================================================
-             CENTER ARENA
-        ================================================== -->
-
-        <section class="panel arena-container">
+        <section class="panel arena-panel">
 
 
-            <!-- EVENT DISPLAY -->
+            <!-- Arena Header -->
+            <header class="arena-header">
 
+                <div class="arena-title">
+                    ⚔️ DUNGEON
+                </div>
+
+                <div
+                    id="arena-level"
+                    class="arena-level"
+                >
+                    LEVEL 1
+                </div>
+
+            </header>
+
+
+            <!-- Event / Enemy Display -->
             <div
                 id="event-display"
                 class="event-display"
             >
 
-                <div class="card">
+                <div class="card idle-card">
 
                     <span class="m-icon">
                         🚪
                     </span>
 
                     <h2>
-                        Level 1 Door
+                        Dungeon Door
                     </h2>
 
-                    <p class="event-description">
+                    <p>
                         Something awaits beyond the door...
                     </p>
 
                 </div>
 
             </div>
-
 
 
             <!-- =================================================
@@ -462,14 +395,14 @@
             >
 
                 <button
-                    class="btn-blue btn-full"
+                    class="btn btn-blue btn-full"
                     onclick="openDoor()"
+                    type="button"
                 >
                     🚪 OPEN DOOR
                 </button>
 
             </div>
-
 
 
             <!-- =================================================
@@ -478,35 +411,35 @@
 
             <div
                 id="group-combat"
-                class="control-group"
+                class="control-group combat-controls"
             >
 
                 <button
-                    class="btn-red"
+                    class="btn btn-red"
                     onclick="handleFight()"
+                    type="button"
                 >
                     ⚔️ ATTACK
                 </button>
 
-
                 <button
-                    class="btn-dark"
+                    class="btn btn-dark"
                     onclick="handleRun()"
+                    type="button"
                 >
                     👟 RUN
                 </button>
 
-
                 <button
                     id="skill-btn"
-                    class="btn-purple btn-full"
+                    class="btn btn-purple btn-full skill-button"
                     onclick="useSkill()"
+                    type="button"
                 >
                     🔥 SKILL
                 </button>
 
             </div>
-
 
 
             <!-- =================================================
@@ -519,8 +452,9 @@
             >
 
                 <button
-                    class="btn-gold btn-full"
+                    class="btn btn-gold btn-full"
                     onclick="resetArena()"
+                    type="button"
                 >
                     🏃 CONTINUE
                 </button>
@@ -528,98 +462,43 @@
             </div>
 
 
-            <!-- =================================================
-                 COMBAT INFO
-            ================================================== -->
-
-            <div
-                id="combat-info"
-                class="combat-info"
-            >
-
-                <div class="combat-info-item">
-
-                    <span>
-                        YOUR POWER
-                    </span>
-
-                    <strong id="combat-player-power">
-                        0
-                    </strong>
-
-                </div>
-
-
-                <div class="combat-vs">
-                    VS
-                </div>
-
-
-                <div class="combat-info-item">
-
-                    <span>
-                        ENEMY POWER
-                    </span>
-
-                    <strong id="combat-enemy-power">
-                        -
-                    </strong>
-
-                </div>
-
-            </div>
-
-
         </section>
 
 
+        <!-- =====================================================
+             BATTLE LOG
+        ====================================================== -->
 
-        <!-- =================================================
-             RIGHT PANEL - LOG
-        ================================================== -->
+        <aside class="panel log-panel-wrapper">
 
-        <aside class="panel log-panel-container">
+            <button
+                id="log-toggle"
+                class="log-header"
+                type="button"
+                onclick="toggleLog()"
+                aria-expanded="false"
+                aria-controls="game-log"
+            >
 
-
-            <div class="log-header">
-
-                <div>
-
-                    <strong>
-                        📜 ADVENTURE LOG
-                    </strong>
-
-                    <small>
-                        Your journey
-                    </small>
-
-                </div>
-
-                <span
-                    id="log-status"
-                    class="log-status"
-                >
-                    ● LIVE
+                <span>
+                    📜 BATTLE LOG
                 </span>
 
-            </div>
+                <span
+                    id="log-toggle-icon"
+                    class="log-toggle-icon"
+                >
+                    ▼
+                </span>
+
+            </button>
 
 
             <div
-                class="log-panel"
                 id="game-log"
+                class="game-log"
             >
-
-                <div class="log-entry system-log">
-                    &gt; Welcome to MUNCHING 2.
-                </div>
-
-                <div class="log-entry system-log">
-                    &gt; Choose your race to begin.
-                </div>
-
             </div>
-
 
         </aside>
 
@@ -627,10 +506,65 @@
     </main>
 
 
+    <!-- =========================================================
+         MOBILE BOTTOM HUD
+    ========================================================== -->
 
-    <!-- =====================================================
+    <div
+        id="mobile-hud"
+        class="mobile-hud"
+    >
+
+        <div class="mobile-hud-stat">
+
+            <span>
+                ⭐
+            </span>
+
+            <strong id="mobile-level">
+                1
+            </strong>
+
+        </div>
+
+
+        <div class="mobile-hud-divider"></div>
+
+
+        <div class="mobile-hud-stat">
+
+            <span>
+                ⚔️
+            </span>
+
+            <strong id="mobile-atk">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="mobile-hud-divider"></div>
+
+
+        <div class="mobile-hud-stat">
+
+            <span>
+                🎒
+            </span>
+
+            <strong id="mobile-inventory">
+                0/5
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
          JAVASCRIPT
-    ====================================================== -->
+    ========================================================== -->
 
     <script src="audio.js"></script>
     <script src="enemies.js"></script>
@@ -638,7 +572,5 @@
     <script src="combat.js"></script>
     <script src="game.js"></script>
 
-
 </body>
-
 </html>
