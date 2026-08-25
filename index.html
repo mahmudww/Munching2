@@ -1,289 +1,2633 @@
-<!DOCTYPE html>
-<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUNCHING V13.7 - AUDIO UPDATE</title>
+
+    <title>MUNCHING 2</title>
+
     <style>
-        :root { --red: #ff4d4d; --gold: #f0e68c; --dark: #0a0a0a; --purple: #da70d6; --green: #2ecc71; --blue: #3498db; --bright-green: #26ff26; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--dark); color: #eee; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .game-wrapper { display: grid; grid-template-columns: 280px 520px 300px; gap: 20px; align-items: start; }
-        .panel { background: #111; border: 2px solid #333; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-        .stats-box { border-left: 4px solid var(--gold); padding-left: 12px; margin-bottom: 15px; background: rgba(255,255,255,0.02); }
-        .atk-val { font-size: 2.8rem; color: var(--red); font-weight: bold; }
-        .inv-slot { background: #1a1a1a; padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 0.8rem; border: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .inv-slot.selectable { cursor: pointer; border-color: var(--blue); }
-        .inv-slot.selectable:hover { background: #222; transform: scale(1.02); }
-        .arena-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 550px; text-align: center; }
-        .card { background: #181818; border: 4px solid #444; border-radius: 25px; padding: 40px; width: 100%; min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
-        .card.monster { border-color: var(--red); }
-        .card.boss { border-color: var(--purple); box-shadow: 0 0 30px rgba(218, 112, 214, 0.4); }
-        .card.loot { border-color: var(--gold); }
-        .m-icon { font-size: 8rem; margin-bottom: 15px; transition: transform 0.1s, filter 0.2s; }
-        .m-icon.dead-icon { 
-            filter: sepia(1) saturate(10000%) hue-rotate(-50deg) !important; 
+@@ -16,7 +15,6 @@
+            --blue: #3498db;
+            --bright-green: #26ff26;
+            --orange: #ff9f43;
+            --gray: #777;
+        }
+
+        * {
+@@ -26,72 +24,50 @@
+
+        body {
+            background:
+                radial-gradient(circle at top, #1b1020 0%, #0a0a0a 45%);
+                radial-gradient(circle at top, #171717 0%, #0a0a0a 45%, #050505 100%);
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* =========================================
+           GAME LAYOUT
+        ========================================= */
+
+        .game-wrapper {
+            display: grid;
+            grid-template-columns: 280px minmax(450px, 520px) 300px;
+            grid-template-columns: 280px 520px 300px;
+            gap: 20px;
+            align-items: start;
+            justify-content: center;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .panel {
+            background: rgba(17, 17, 17, 0.96);
+            background: rgba(17, 17, 17, 0.95);
+            border: 2px solid #333;
+            border-radius: 18px;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.7),
+                inset 0 0 30px rgba(255,255,255,0.01);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        /* =========================================
+           LEFT PANEL
+        ========================================= */
+
+        .stats-box {
+            border-left: 4px solid var(--gold);
+            padding: 12px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.025);
+            padding-left: 12px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.02);
+            padding-top: 8px;
+            padding-bottom: 8px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .stats-box small {
+            color: #777;
+            letter-spacing: 1px;
+        }
+
+        .atk-val {
+            font-size: 2.8rem;
+            color: var(--red);
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(255,77,77,0.3);
+        }
+
+        .inventory-title {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .inv-slot {
+            background: #1a1a1a;
+            padding: 11px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+@@ -102,10 +78,6 @@
+            transition: 0.2s;
+        }
+
+        .inv-slot:hover {
+            background: #222;
+        }
+
+        .inv-slot.selectable {
+            cursor: pointer;
+            border-color: var(--blue);
+@@ -114,76 +86,72 @@
+        .inv-slot.selectable:hover {
+            background: #222;
+            transform: scale(1.02);
+            border-color: var(--gold);
+        }
+
+        /* =========================================
+           ARENA
+        ========================================= */
+
+        .arena-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+            min-height: 550px;
+            text-align: center;
+        }
+
+        .card {
+            background:
+                linear-gradient(145deg, #1d1d1d, #131313);
+                linear-gradient(145deg, #1b1b1b, #111);
+            border: 4px solid #444;
+            border-radius: 25px;
+            padding: 40px;
+            width: 100%;
+            min-height: 420px;
+
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            transition: 0.3s;
+
+            box-shadow:
+                inset 0 0 40px rgba(0,0,0,0.3);
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.02);
+        }
+
+        .card.monster {
+            border-color: var(--red);
+            box-shadow:
+                0 0 30px rgba(255,77,77,0.15),
+                inset 0 0 40px rgba(255,0,0,0.03);
+            box-shadow: 0 0 30px rgba(255,77,77,0.15);
+        }
+
+        .card.boss {
+            border-color: var(--purple);
+            box-shadow:
+                0 0 35px rgba(218,112,214,0.35),
+                inset 0 0 50px rgba(218,112,214,0.05);
+            box-shadow: 0 0 35px rgba(218,112,214,0.35);
+        }
+
+        .card.loot {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(240,230,140,0.15);
+        }
+
+        .card.trap {
+            border-color: var(--orange);
+            box-shadow: 0 0 30px rgba(255,159,67,0.15);
+        }
+
+        .card.run-success {
+            border-color: var(--green);
+            box-shadow: 0 0 30px rgba(46,204,113,0.2);
+        }
+
+        .card.run-fail {
+            border-color: var(--red);
+            box-shadow: 0 0 30px rgba(255,77,77,0.2);
+        }
+
+        .m-icon {
+            font-size: 8rem;
+            margin-bottom: 15px;
+            transition: transform 0.1s, filter 0.2s;
+            user-select: none;
+        }
+
+        .m-icon.dead-icon {
+            filter:
+                sepia(1)
+                saturate(10000%)
+                hue-rotate(-50deg) !important;
+
+            filter: sepia(1) saturate(10000%) hue-rotate(-50deg) !important;
             transform: scale(1.1) rotate(5deg);
             animation: deadShake 0.3s ease-out;
         }
-        @keyframes deadShake { 0% { transform: translate(0, 0); } 25% { transform: translate(5px, -5px); } 50% { transform: translate(-5px, 5px); } 75% { transform: translate(5px, 5px); } 100% { transform: scale(1.1) rotate(5deg); } }
-        .dice-roll { font-size: 5rem; color: var(--gold); font-weight: bold; animation: pulse 0.3s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
-        .control-group { width: 100%; margin-top: 25px; display: none; grid-template-columns: 1fr 1fr; gap: 12px; }
-        button { padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 0.9rem; }
-        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
-        .btn-full { grid-column: span 2; }
-        .btn-blue { background: var(--blue); color: white; }
-        .btn-red { background: var(--red); color: white; }
-        .btn-gold { background: var(--gold); color: black; }
-        .btn-dark { background: #333; color: #ccc; }
-        #overlay, #death-screen, #win-screen, #swap-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .race-card { background: #222; border: 1px solid #444; padding: 25px; border-radius: 20px; width: 280px; cursor: pointer; transition: 0.3s; margin: 10px; }
-        .race-card:hover { border-color: var(--gold); background: #2a2a2a; }
-        .log-panel { height: 500px; overflow-y: auto; background: #080808; border-radius: 10px; font-size: 0.85rem; border: 1px solid #222; }
-        .log-entry { padding: 10px 15px; border-bottom: 1px solid #151515; }
+@@ -210,16 +178,11 @@
+            }
+        }
+
+        /* =========================================
+           DICE
+        ========================================= */
+
+        .dice-roll {
+            font-size: 5rem;
+            color: var(--gold);
+            font-weight: bold;
+            animation: pulse 0.3s infinite;
+            text-shadow: 0 0 25px rgba(240,230,140,0.4);
+        }
+
+        @keyframes pulse {
+@@ -234,34 +197,6 @@
+            }
+        }
+
+        .dice-result {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--gold);
+            text-shadow: 0 0 25px rgba(240,230,140,0.4);
+            animation: resultPop 0.4s ease-out;
+        }
+
+        @keyframes resultPop {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* =========================================
+           CONTROLS
+        ========================================= */
+
+        .control-group {
+            width: 100%;
+            margin-top: 25px;
+@@ -319,132 +254,110 @@
+            color: white;
+        }
+
+        /* =========================================
+           LOG
+        ========================================= */
+
+        .log-panel {
+            height: 560px;
+            overflow-y: auto;
+            background: #080808;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            border: 1px solid #222;
+            padding: 0;
+        }
+
+        .log-header {
+            position: sticky;
+            top: 0;
+            background: #111;
+            padding: 15px;
+            border-bottom: 1px solid #222;
+            color: #777;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        .log-entry {
+            padding: 10px 15px;
+            border-bottom: 1px solid #151515;
+            line-height: 1.4;
+        }
+
+        /* =========================================
+           OVERLAYS
+        ========================================= */
+
+        #overlay,
+        #death-screen,
+        #win-screen,
+        #swap-screen {
+
+            position: fixed;
+            inset: 0;
+
+            background: rgba(0,0,0,0.95);
+
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+
+            backdrop-filter: blur(8px);
+        }
+
+        .race-card {
+            background:
+                linear-gradient(145deg, #222, #171717);
+
+            background: #222;
+            border: 1px solid #444;
+
+            padding: 25px;
+
+            border-radius: 20px;
+
+            width: 280px;
+
+            cursor: pointer;
+
+            transition: 0.3s;
+
+            margin: 10px;
+
+            text-align: center;
+        }
+
+        .race-card:hover {
+            border-color: var(--gold);
+            background: #2a2a2a;
+            transform: translateY(-6px);
+            box-shadow:
+                0 15px 30px rgba(0,0,0,0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(240,230,140,0.1);
+        }
+
+        .log-panel {
+            height: 500px;
+            overflow-y: auto;
+            background: #080808;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid #222;
+        }
+
+        .race-card h2 {
+            margin-top: 0;
+        .log-entry {
+            padding: 10px 15px;
+            border-bottom: 1px solid #151515;
+        }
+
+        .overlay-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        .combat-info {
+            display: flex;
+            gap: 30px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* =========================================
+           SWAP
+        ========================================= */
+        .combat-info strong {
+            color: white;
+        }
+
+        .swap-container {
+            background: #161616;
+            border: 1px solid #333;
+            padding: 25px;
+            border-radius: 20px;
+            width: 360px;
+            max-width: 90%;
+            text-align: center;
+        .result-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .result-detail {
+            color: #aaa;
+            margin: 5px 0;
+        }
+
+        .level-change {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .positive {
+            color: var(--green);
+        }
+
+        .negative {
+            color: var(--red);
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+        .neutral {
+            color: var(--gold);
+        }
+
+        @media (max-width: 1050px) {
+        .skill-status {
+            font-size: 0.75rem;
+            color: var(--purple);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1150px) {
+            .game-wrapper {
+                grid-template-columns: 240px minmax(400px, 520px);
+                grid-template-columns: 240px 1fr;
+            }
+
+            .log-panel {
+                grid-column: span 2;
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 700px) {
+
+        @media (max-width: 750px) {
+            body {
+                padding: 10px;
+            }
+@@ -455,7 +368,6 @@
+
+            .log-panel {
+                grid-column: auto;
+                height: 250px;
+            }
+
+            .arena-container {
+@@ -464,142 +376,98 @@
+
+            .card {
+                min-height: 350px;
+                padding: 25px;
+            }
+
+            .m-icon {
+                font-size: 6rem;
+            .race-card {
+                width: 90%;
+            }
+        }
     </style>
 </head>
+
 <body>
 
+<!-- =========================================
+     START SCREEN
+========================================= -->
+
+<!-- START SCREEN -->
 <div id="overlay">
-    <h1 style="color: var(--red); font-size: 3rem;">⚔️ MUNCHING ⚔️</h1>
-    <p style="color: #666; margin-bottom: 30px;">V13.7 AUDIO UPDATE</p>
+
+    <h1 style="
+        color: var(--red);
+        font-size: 3rem;
+        text-shadow: 0 0 20px rgba(255,77,77,0.3);
+    ">
+    <h1 style="color: var(--red); font-size: 3rem;">
+        ⚔️ MUNCHING 2 ⚔️
+    </h1>
+
+    <p class="overlay-subtitle">
+    <p style="color: #666; margin-bottom: 30px;">
+        THE RETURN OF LORD MUNCHING
+    </p>
+
+    <div style="
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    ">
     <div style="display: flex; flex-wrap: wrap; justify-content: center;">
-        <div class="race-card" onclick="initGame('Orc')"><h2 style="color: var(--red);">👹 ORC</h2><p><small>+5 ATK Dasar | 🔥 Skill Berserk</small></p></div>
-        <div class="race-card" onclick="initGame('Elf')"><h2 style="color: var(--blue);">🧝 ELF</h2><p><small>+2 ATK Dasar | 👟 Dadu Lari +1</small></p></div>
-        <div class="race-card" onclick="initGame('Dwarf')"><h2 style="color: var(--gold);">🧔 DWARF</h2><p><small>+2 ATK Dasar | 🔨 Item Bonus +1</small></p></div>
+
+        <div class="race-card" onclick="initGame('Orc')">
+            <h2 style="color: var(--red);">
+                👹 ORC
+            </h2>
+
+            <h2 style="color: var(--red);">👹 ORC</h2>
+            <p>
+                <small>
+                    +5 Base ATK<br>
+                    🔥 Berserk: ATK ×2
+                    🔥 Berserk: Double ATK for one attack
+                </small>
+            </p>
+        </div>
+
+        <div class="race-card" onclick="initGame('Elf')">
+            <h2 style="color: var(--blue);">
+                🧝 ELF
+            </h2>
+
+            <h2 style="color: var(--blue);">🧝 ELF</h2>
+            <p>
+                <small>
+                    +2 Base ATK<br>
+                    👟 Escape Dice +1
+                    👟 +1 Run Dice
+                </small>
+            </p>
+        </div>
+
+        <div class="race-card" onclick="initGame('Dwarf')">
+            <h2 style="color: var(--gold);">
+                🧔 DWARF
+            </h2>
+
+            <h2 style="color: var(--gold);">🧔 DWARF</h2>
+            <p>
+                <small>
+                    +2 Base ATK<br>
+                    🔨 Item Bonus +1
+                    🔨 +1 ATK per Item
+                </small>
+            </p>
+        </div>
+
     </div>
-    <p style="color: #444; margin-top: 20px;">*Klik salah satu untuk memulai audio*</p>
+
+    <p style="color: #444; margin-top: 20px;">
+        Choose your race to begin
+        Choose your race to begin.
+    </p>
+
 </div>
 
+
+<!-- =========================================
+     INVENTORY SWAP SCREEN
+========================================= -->
+
+<!-- INVENTORY SWAP SCREEN -->
 <div id="swap-screen" style="display: none;">
-    <h2 style="color: var(--gold);">🎒 TAS PENUH!</h2>
-    <p>Pilih item untuk diganti dengan <b id="new-item-name"></b></p>
+
+    <div class="swap-container">
+
+        <h2 style="color: var(--gold);">
+            🎒 INVENTORY FULL!
+        </h2>
+
+        <p>
+            Choose an item to replace with:
+        </p>
+    <h2 style="color: var(--gold);">
+        🎒 INVENTORY FULL!
+    </h2>
+
+        <h3 id="new-item-name" style="color: var(--gold);"></h3>
+
+        <div
+            id="swap-list"
+            style="width: 100%; margin: 20px 0;"
+        ></div>
+    <p>
+        Choose an item to replace with
+        <b id="new-item-name"></b>
+    </p>
+
+        <button
+            class="btn-dark"
+            onclick="cancelSwap()"
+        >
+            🗑️ DISCARD
+        </button>
     <div id="swap-list" style="width: 320px; margin: 20px 0;"></div>
-    <button class="btn-dark" onclick="cancelSwap()">🗑️ BUANG</button>
-</div>
 
-<div id="death-screen" style="display: none;">
-    <h1 style="color: var(--red); font-size: 4rem;">💀 MATI 💀</h1>
-    <p id="death-reason" style="font-size: 1.2rem;"></p>
-    <button class="btn-red" style="padding: 15px 40px;" onclick="location.reload()">♻️ COBA LAGI</button>
-</div>
-
-<div id="win-screen" style="display: none;">
-    <h1 style="color: var(--gold); font-size: 4rem;">🏆 VICTORY 🏆</h1>
-    <p>LORD MUNCHING TELAH TUMBANG!</p>
-    <button class="btn-gold" style="padding: 15px 40px;" onclick="location.reload()">🔄 MAIN LAGI</button>
-</div>
-
-<div class="game-wrapper">
-    <div class="panel">
-        <div class="stats-box"><small>👤 HERO</small><br><strong id="ui-race">-</strong></div>
-        <div class="stats-box"><small>⭐ LEVEL</small><br><strong id="ui-level" style="font-size: 1.5rem; color: var(--gold);">1</strong></div>
-        <div class="stats-box"><small>💥 TOTAL POWER</small><br><span class="atk-val" id="ui-atk">0</span></div>
-        <hr border="0" style="height: 1px; background: #222; margin: 20px 0;">
-        <strong style="font-size: 0.8rem; color: #444;">🎒 TAS (Auto-Stacking)</strong>
-        <div id="ui-inv" style="margin-top: 10px;"></div>
     </div>
+    <button class="btn-dark" onclick="cancelSwap()">
+        🗑️ DISCARD
+    </button>
+
+</div>
+
+
+<!-- =========================================
+     DEATH SCREEN
+========================================= -->
+
+<!-- DEATH SCREEN -->
+<div id="death-screen" style="display: none;">
+
+    <h1 style="
+        color: var(--red);
+        font-size: 4rem;
+    ">
+        💀 DEFEATED 💀
+    <h1 style="color: var(--red); font-size: 4rem;">
+        💀 YOU DIED 💀
+    </h1>
+
+    <p
+        id="death-reason"
+        style="font-size: 1.2rem; text-align: center;"
+    ></p>
+    <p id="death-reason" style="font-size: 1.2rem;"></p>
+
+    <button
+        class="btn-red"
+@@ -612,16 +480,10 @@ <h3 id="new-item-name" style="color: var(--gold);"></h3>
+</div>
+
+
+<!-- =========================================
+     WIN SCREEN
+========================================= -->
+
+<!-- WIN SCREEN -->
+<div id="win-screen" style="display: none;">
+
+    <h1 style="
+        color: var(--gold);
+        font-size: 4rem;
+    ">
+    <h1 style="color: var(--gold); font-size: 4rem;">
+        🏆 VICTORY 🏆
+    </h1>
+
+@@ -640,100 +502,62 @@ <h3 id="new-item-name" style="color: var(--gold);"></h3>
+</div>
+
+
+<!-- =========================================
+     MAIN GAME
+========================================= -->
+
+<!-- GAME -->
+<div class="game-wrapper">
+
+    <!-- LEFT PANEL -->
+
+    <div class="panel">
+
+        <div class="stats-box">
+
+            <small>👤 HERO</small>
+
+            <br>
+
+            <strong id="ui-race">
+                -
+            </strong>
+
+            <strong id="ui-race">-</strong>
+        </div>
+
+
+        <div class="stats-box">
+
+            <small>⭐ LEVEL</small>
+
+            <br>
+
+            <strong
+                id="ui-level"
+                style="
+                    font-size: 1.5rem;
+                    color: var(--gold);
+                "
+                style="font-size: 1.5rem; color: var(--gold);"
+            >
+                1
+            </strong>
+
+        </div>
+
+
+        <div class="stats-box">
+
+            <small>💥 TOTAL POWER</small>
+
+            <br>
+
+            <span
+                class="atk-val"
+                id="ui-atk"
+            >
+                0
+            </span>
+
+            <span class="atk-val" id="ui-atk">0</span>
+        </div>
+
+        <div id="skill-status" class="skill-status"></div>
+
+        <hr
+            style="
+                border: 0;
+                height: 1px;
+                background: #222;
+                border: 0;
+                margin: 20px 0;
+            "
+        >
+
+        <strong style="font-size: 0.8rem; color: #666;">
+            🎒 INVENTORY
+        </strong>
+
+        <div class="inventory-title">
+
+            <strong>
+                🎒 INVENTORY
+            </strong>
+
+            <span>
+                <span id="inventory-count">0</span>/5
+            </span>
+
+        </div>
+
+
+        <div id="ui-inv"></div>
+        <div
+            id="ui-inv"
+            style="margin-top: 10px;"
+        ></div>
+
+    </div>
+
+
+    <!-- ARENA -->
 
     <div class="panel arena-container">
-        <div id="event-display" style="width: 100%;">
-            <div class="card">
-                <span class="m-icon">🚪</span>
-                <h2>Pintu Level 1</h2>
-            </div>
-        </div>
-        <div id="group-door" class="control-group"><button class="btn-blue btn-full" onclick="openDoor()">🚪 BUKA PINTU</button></div>
-        <div id="group-combat" class="control-group">
-            <button class="btn-red" onclick="handleFight()">⚔️ SERANG</button>
-            <button class="btn-dark" onclick="handleRun()">👟 LARI</button>
-            <button id="skill-btn" class="btn-blue btn-full" style="background: var(--purple); margin-top:10px;" onclick="useSkill()">🔥 SKILL</button>
-        </div>
-        <div id="group-next" class="control-group"><button class="btn-gold btn-full" onclick="resetArena()">🏃 LANJUT</button></div>
-    </div>
 
-    <div class="panel log-panel" id="game-log"></div>
+        <div
+            id="event-display"
+            style="width: 100%;"
+        >
+        <div id="event-display" style="width: 100%;">
+
+            <div class="card">
+
+@@ -745,17 +569,12 @@ <h2>
+                    Level 1 Door
+                </h2>
+
+                <p style="color: #777;">
+                    Something is waiting beyond...
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- DOOR -->
+
+        <div
+            id="group-door"
+            class="control-group"
+@@ -772,7 +591,6 @@ <h2>
+
+
+        <!-- COMBAT -->
+
+        <div
+            id="group-combat"
+            class="control-group"
+@@ -797,14 +615,13 @@ <h2>
+                class="btn-purple btn-full"
+                onclick="useSkill()"
+            >
+                🔥 BERSERK
+                🔥 SKILL
+            </button>
+
+        </div>
+
+
+        <!-- NEXT -->
+
+        <div
+            id="group-next"
+            class="control-group"
+@@ -823,44 +640,27 @@ <h2>
+
+
+    <!-- LOG -->
+
+    <div
+        class="panel log-panel"
+        id="game-log"
+    >
+
+        <div class="log-header">
+            📜 ADVENTURE LOG
+        </div>
+
+    </div>
+    ></div>
+
 </div>
 
+
 <script>
-    // --- AUDIO ENGINE ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
+
+    /* =========================================
+       AUDIO ENGINE
+    ========================================= */
+    // =========================================================
+    // AUDIO ENGINE
+    // =========================================================
+
+    const audioCtx =
+        new (window.AudioContext ||
+             window.webkitAudioContext)();
+
+
+    function playNote(
+        freq,
+        type,
+        duration,
+        vol
+    ) {
+        new (window.AudioContext || window.webkitAudioContext)();
+
+        const osc =
+            audioCtx.createOscillator();
     function playNote(freq, type, duration, vol) {
+
+        const gain =
+            audioCtx.createGain();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
+
+        osc.type = type;
+
+@@ -880,14 +680,10 @@ <h2>
+        );
+
+        osc.connect(gain);
+
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+
+        osc.stop(
+            audioCtx.currentTime + duration
+        );
+        osc.stop(audioCtx.currentTime + duration);
     }
 
-    const sfx = {
-        attack: () => { playNote(150, 'square', 0.2, 0.1); playNote(100, 'sawtooth', 0.3, 0.1); },
-        loot: () => { playNote(880, 'sine', 0.1, 0.1); setTimeout(() => playNote(1320, 'sine', 0.2, 0.1), 100); },
-        trap: () => { playNote(200, 'sawtooth', 0.4, 0.1); playNote(180, 'sawtooth', 0.4, 0.1); },
-        run: () => { playNote(440, 'triangle', 0.1, 0.05); },
-        death: () => { [300, 250, 200, 150].forEach((f, i) => setTimeout(() => playNote(f, 'sawtooth', 0.5, 0.1), i * 150)); }
+
+@@ -962,36 +758,9 @@ <h2>
+
+        },
+
+        success: () => {
+
+            playNote(
+                660,
+                'sine',
+                0.1,
+                0.08
+            );
+
+            setTimeout(
+                () =>
+                    playNote(
+                        880,
+                        'sine',
+                        0.2,
+                        0.08
+                    ),
+                100
+            );
+
+        },
+
+        death: () => {
+
+            [
+                300,
+                250,
+                200,
+                150
+            ].forEach(
+            [300, 250, 200, 150].forEach(
+                (f, i) => {
+
+                    setTimeout(
+@@ -1013,10 +782,6 @@ <h2>
     };
 
+
+    /* =========================================
+       BGM
+    ========================================= */
+
     function startBGM() {
-        const notes = [261.63, 329.63, 392.00, 329.63];
+
+        const notes = [
+@@ -1028,28 +793,25 @@ <h2>
+
         let i = 0;
+
+        setInterval(
+            () => {
         setInterval(() => {
-            playNote(notes[i % notes.length] / 2, 'triangle', 0.5, 0.02);
+
+                playNote(
+                    notes[i % notes.length] / 2,
+                    'triangle',
+                    0.5,
+                    0.02
+                );
+            playNote(
+                notes[i % notes.length] / 2,
+                'triangle',
+                0.5,
+                0.02
+            );
+
+                i++;
             i++;
+
+            },
+            600
+        );
         }, 600);
+
     }
 
-    // --- GAME LOGIC ---
-    const PREFIXES = ["💢 Angry", "🤢 Toxic", "❄️ Frozen", "🔥 Blazing", "💀 Cursed", "🌪️ Swift", "💎 Ancient", "🧬 Mutant", "🌑 Shadow", "🔱 Elite"];
-    const SPECIES = [
-        {n:"Slime", i:"🧪"}, {n:"Goblin", i:"👺"}, {n:"Spider", i:"🕷️"}, {n:"Skeleton", i:"💀"}, {n:"Bat", i:"🦇"},
-        {n:"Wolf", i:"🐺"}, {n:"Zombie", i:"🧟"}, {n:"Rat", i:"🐀"}, {n:"Cobra", i:"🐍"}, {n:"Ghost", i:"👻"}
-    ];
-    const ITEMS_BASE = [{id:"sword", n:"Sword", e:"⚔️", p:4}, {id:"shield", n:"Shield", e:"🛡️", p:3}, {id:"axe", n:"Axe", e:"🪓", p:5}, {id:"wand", n:"Wand", e:"🪄", p:6}, {id:"ring", n:"Ring", e:"💍", p:4}];
 
-    let p = { race: "", lvl: 1, baseAtk: 0, inv: [], skillUsed: false, skillActive: false, curEn: null, pendingItem: null };
+    /* =========================================
+       GAME DATA
+    ========================================= */
+    // =========================================================
+    // GAME DATA
+    // =========================================================
+
+    const PREFIXES = [
+
+@@ -1162,9 +924,9 @@ <h2>
+    ];
+
+
+    /* =========================================
+       PLAYER STATE
+    ========================================= */
+    // =========================================================
+    // PLAYER STATE
+    // =========================================================
+
+    let p = {
+
+@@ -1187,9 +949,9 @@ <h2>
+    };
+
+
+    /* =========================================
+       CONTROLS
+    ========================================= */
+    // =========================================================
+    // UI
+    // =========================================================
 
     function showControls(gid) {
-        document.querySelectorAll('.control-group').forEach(e => e.style.display = 'none');
-        document.getElementById(gid).style.display = 'grid';
+
+@@ -1207,9 +969,67 @@ <h2>
     }
+
+
+    /* =========================================
+       START GAME
+    ========================================= */
+    function updateUI() {
+
+        document
+            .getElementById('ui-level')
+            .innerText = p.lvl;
+
+        document
+            .getElementById('ui-atk')
+            .innerText = calculateAtk();
+
+
+        document
+            .getElementById('ui-inv')
+            .innerHTML =
+                p.inv.map(
+                    i => `
+                        <div class="inv-slot">
+                            <span>
+                                ${i.e} ${i.n}
+                            </span>
+
+                            <span>
+                                +${i.p}
+                            </span>
+                        </div>
+                    `
+                ).join('')
+
+                ||
+
+                '<div class="inv-slot">Empty</div>';
+
+
+        const skillStatus =
+            document.getElementById(
+                'skill-status'
+            );
+
+        if (p.skillActive) {
+
+            skillStatus.innerText =
+                "🔥 SKILL ACTIVE";
+
+        } else if (p.skillUsed) {
+
+            skillStatus.innerText =
+                "Skill already used";
+
+        } else {
+
+            skillStatus.innerText =
+                "";
+
+        }
+
+    }
+
+
+    // =========================================================
+    // GAME START
+    // =========================================================
 
     function initGame(race) {
-        audioCtx.resume(); startBGM();
-        p.race = race; p.baseAtk = (race === 'Orc') ? 5 : 2;
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('ui-race').innerText = race.toUpperCase();
-        showControls('group-door'); updateUI();
-        log(`🚪 Petualangan dimulai!`, "white");
+
+@@ -1224,32 +1044,35 @@ <h2>
+                ? 5
+                : 2;
+
+
+        document
+            .getElementById('overlay')
+            .style.display = 'none';
+
+
+        document
+            .getElementById('ui-race')
+            .innerText =
+                race.toUpperCase();
+
+        updateSkillButton();
+
+        showControls('group-door');
+        showControls(
+            'group-door'
+        );
+
+        updateUI();
+
+        log(
+            `⚔️ Adventure begins! You chose ${race}.`,
+            `🚪 Adventure begins! You are an ${race}.`,
+            "white"
+        );
+
     }
+
+
+    /* =========================================
+       OPEN DOOR
+    ========================================= */
+    // =========================================================
+    // DOOR
+    // =========================================================
 
     function openDoor() {
-        if (p.lvl === 3) spawnBoss("🛡️ Kargath the Gatekeeper", 20, "👹");
-        else if (p.lvl === 6) {
-            const boss = Math.random() > 0.5 ? {n:"👑 Xenomorph Queen", p:40, i:"👽"} : {n:"🌌 Void Reaver", p:45, i:"👻"};
-            spawnBoss(boss.n, boss.p, boss.i);
-        }
-        else if (p.lvl === 10) spawnBoss("👑 LORD MUNCHING", 85, "🐲");
-        else {
-            const rng = Math.random();
-            if (rng < 0.45) spawnMonster();
-            else if (rng < 0.70) spawnTrap();
-            else spawnLoot();
-        }
+
+@@ -1326,9 +1149,9 @@ <h2>
     }
+
+
+    /* =========================================
+       MONSTER
+    ========================================= */
+    // =========================================================
+    // MONSTER
+    // =========================================================
 
     function spawnMonster() {
-        const spec = SPECIES[Math.floor(Math.random()*SPECIES.length)];
-        const power = Math.floor(4 + (p.lvl * 3.5) + (Math.random() * 5));
-        p.curEn = { n: `${PREFIXES[Math.floor(Math.random()*PREFIXES.length)]} ${spec.n}`, pwr: power, i: spec.i };
-        document.getElementById('event-display').innerHTML = `<div class="card monster"><span class="m-icon">${spec.i}</span><h2 style="color: var(--red)">${p.curEn.n}</h2><h3>Power: ${power}</h3></div>`;
-        showControls('group-combat'); log(`👾 Bertemu ${p.curEn.n}!`, "var(--red)");
+
+@@ -1352,24 +1175,28 @@ <h2>
+        p.curEn = {
+
+            n:
+                `${PREFIXES[
+                    Math.floor(
+                        Math.random() *
+                        PREFIXES.length
+                    )
+                ]} ${spec.n}`,
+                `${
+                    PREFIXES[
+                        Math.floor(
+                            Math.random() *
+                            PREFIXES.length
+                        )
+                    ]
+                } ${spec.n}`,
+
+            pwr: power,
+
+            i: spec.i,
+
+            isBoss: false
+            boss: false
+
+        };
+
+
+        document
+            .getElementById('event-display')
+            .getElementById(
+                'event-display'
+            )
+            .innerHTML = `
+
+                <div class="card monster">
+@@ -1382,29 +1209,41 @@ <h2 style="color: var(--red)">
+                        ${p.curEn.n}
+                    </h2>
+
+                    <h3>
+                        Power: ${power}
+                    </h3>
+                    <div class="combat-info">
+
+                        <span>
+                            Enemy Power:
+                            <strong>${power}</strong>
+                        </span>
+
+                        <span>
+                            Your Power:
+                            <strong>${calculateAtk()}</strong>
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+        showControls('group-combat');
+        showControls(
+            'group-combat'
+        );
+
+        updateSkillButton();
+
+        log(
+            `👾 Encountered ${p.curEn.n}! Power ${power}.`,
+            `👾 Encountered ${p.curEn.n}!`,
+            "var(--red)"
+        );
+
     }
 
-    function spawnBoss(name, pwr, icon) {
-        p.curEn = { n: name, pwr: pwr, i: icon };
-        document.getElementById('event-display').innerHTML = `<div class="card boss"><span class="m-icon">${icon}</span><h2 style="color:var(--purple)">${name}</h2><h3 style="font-size:2rem">Power: ${pwr}</h3></div>`;
-        showControls('group-combat'); log(`🔥 BOSS ${name} HADIR!`, "var(--purple)");
+
+    /* =========================================
+       BOSS
+    ========================================= */
+    // =========================================================
+    // BOSS
+    // =========================================================
+
+    function spawnBoss(
+        name,
+@@ -1420,13 +1259,15 @@ <h3>
+
+            i: icon,
+
+            isBoss: true
+            boss: true
+
+        };
+
+
+        document
+            .getElementById('event-display')
+            .getElementById(
+                'event-display'
+            )
+            .innerHTML = `
+
+                <div class="card boss">
+@@ -1435,56 +1276,65 @@ <h3>
+                        ${icon}
+                    </span>
+
+                    <h2 style="color: var(--purple)">
+                    <h2 style="color:var(--purple)">
+                        ${name}
+                    </h2>
+
+                    <h3 style="font-size: 2rem">
+                        Power: ${pwr}
+                    </h3>
+                    <div class="combat-info">
+
+                    <p style="color: var(--purple)">
+                        👑 BOSS
+                    </p>
+                        <span>
+                            Boss Power:
+                            <strong>${pwr}</strong>
+                        </span>
+
+                        <span>
+                            Your Power:
+                            <strong>${calculateAtk()}</strong>
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+        showControls('group-combat');
+        showControls(
+            'group-combat'
+        );
+
+        updateSkillButton();
+
+        log(
+            `🔥 BOSS ${name} HAS ARRIVED!`,
+            `🔥 BOSS ${name} HAS APPEARED!`,
+            "var(--purple)"
+        );
+
     }
+
+
+    /* =========================================
+       FIGHT
+    ========================================= */
+    // =========================================================
+    // ATTACK
+    // =========================================================
 
     function handleFight() {
+
         sfx.attack();
-        if (calculateAtk() >= p.curEn.pwr) {
-            const enemyIcon = document.querySelector('.m-icon');
-            if (enemyIcon) enemyIcon.classList.add('dead-icon');
-            log(`✅ Menang lawan ${p.curEn.n}!`, "var(--bright-green)");
-            if (p.lvl >= 10) { setTimeout(() => document.getElementById('win-screen').style.display = 'flex', 500); return; }
-            p.lvl++;
-            if (p.race === 'Orc' && p.skillActive) { p.lvl -= 2; log("Berserk: Level -2", "var(--purple)"); }
-            if (p.lvl <= 0) return triggerDeath(`Tewas kelelahan (Level 0).`);
-            setTimeout(endTurn, 500);
-        } else {
-            log(`❌ Kalah! Level -2`, "var(--red)");
-            p.lvl -= 2;
-            if (p.lvl <= 0) triggerDeath(`Dibantai oleh ${p.curEn.n} (Level 0).`);
-            else endTurn();
-        }
+
+        const playerAtk =
+            calculateAtk();
+
+        const enemyPower =
+            p.curEn.pwr;
+        const attackPower =
+            calculateAtk();
+
+
+        log(
+            `⚔️ You attack with ${playerAtk} Power against ${enemyPower}.`,
+            "white"
+            `⚔️ You attack with ${attackPower} Power!`,
+            "var(--gold)"
+        );
+
+
+        if (playerAtk >= enemyPower) {
+        if (
+            attackPower >=
+            p.curEn.pwr
+        ) {
+
+            const enemyIcon =
+                document.querySelector(
+@@ -1502,24 +1352,21 @@ <h3 style="font-size: 2rem">
+
+
+            log(
+                `✅ Victory! You defeated ${p.curEn.n}!`,
+                `✅ You defeated ${p.curEn.n}!`,
+                "var(--bright-green)"
+            );
+
+
+            if (p.lvl >= 10) {
+
+                setTimeout(
+                    () => {
+
+                    () =>
+                        document
+                            .getElementById(
+                                'win-screen'
+                            )
+                            .style.display =
+                                'flex';
+                            .style.display = 'flex',
+
+                    },
+                    500
+                );
+
+@@ -1532,17 +1379,10 @@ <h3 style="font-size: 2rem">
+
+
+            /*
+             * IMPORTANT:
+             *
+             * Berserk no longer causes
+             * the player to lose levels
+             * after attacking.
+             *
+             * Skill only modifies ATK
+             * for the current turn.
+             * Orc Berserk no longer modifies the player's level.
+             * The skill only affects the current attack.
+             */
+
+
+            setTimeout(
+                endTurn,
+                500
+@@ -1553,7 +1393,7 @@ <h3 style="font-size: 2rem">
+        else {
+
+            log(
+                `❌ Defeat! You lost 2 levels.`,
+                `❌ You lost the fight! Level -2.`,
+                "var(--red)"
+            );
+
+@@ -1580,33 +1420,26 @@ <h3 style="font-size: 2rem">
     }
+
+
+    /* =========================================
+       RUN
+       
+       RULES:
+       
+       1-2:
+       Failed
+       Level -3
+       ALL inventory lost
+
+       3-4:
+       Escape
+       Normal = Level -1
+       Boss = Level -2
+       Lose 1 random item
+
+       5-6:
+       Safe escape
+       Normal = Level -1
+       Boss = Level -2
+       No item lost
+    ========================================= */
+    // =========================================================
+    // RUN
+    // =========================================================
 
     function handleRun() {
-        document.getElementById('event-display').innerHTML = `<div class="card"><div class="dice-roll">🎲</div><p>ROLLING...</p></div>`;
-        let rolls = 0; let interval = setInterval(() => { sfx.run(); rolls++; if(rolls > 5) clearInterval(interval); }, 100);
-        setTimeout(() => {
-            let roll = Math.floor(Math.random() * 6) + 1;
-            let finalRoll = roll + (p.race === 'Elf' ? 1 : 0);
-            log(`🎲 Dadu: ${roll} = ${finalRoll}`, "var(--gold)");
-            if (finalRoll >= 4) {
-                log("👟 Berhasil kabur!", "var(--green)");
-                document.getElementById('event-display').innerHTML = `<div class="card"><span class="m-icon">🏃</span><h2>BERHASIL LARI!</h2></div>`;
-                endTurn();
-            } else {
-                log("❌ Gagal! Level -1 & Item hancur.", "var(--red)");
-                if(p.inv.length > 0) p.inv.pop(); p.lvl--;
-                if (p.lvl <= 0) triggerDeath("Tewas saat lari (Level 0).");
-                else endTurn();
-            }
-        }, 800);
+
+        /*
+         * Save whether this is a boss before the
+         * enemy state changes.
+         */
+
+        const isBoss =
+            p.curEn &&
+            p.curEn.boss === true;
+
+
+        document
+            .getElementById('event-display')
+            .getElementById(
+                'event-display'
+            )
+            .innerHTML = `
+
+                <div class="card">
+@@ -1615,15 +1448,12 @@ <h3 style="font-size: 2rem">
+                        🎲
+                    </div>
+
+                    <h2>
+                        ROLLING...
+                    </h2>
+
+                    <p>
+                        Trying to escape...
+                        ROLLING...
+                    </p>
+
+                </div>
+
+            `;
+
+
+@@ -1660,46 +1490,42 @@ <h2>
+                    ) + 1;
+
+
+                const bonus =
+                    p.race === 'Elf'
+                        ? 1
+                        : 0;
+
+
+                const finalRoll =
+                    roll + bonus;
+
+
+                const isBoss =
+                    p.curEn &&
+                    p.curEn.isBoss === true;
+                    roll +
+                    (
+                        p.race === 'Elf'
+                            ? 1
+                            : 0
+                    );
+
+
+                log(
+                    `🎲 Dice: ${roll}${bonus ? ` + ${bonus} Elf Bonus` : ''} = ${finalRoll}`,
+                    `🎲 Dice Roll: ${roll}${
+                        p.race === 'Elf'
+                            ? ` + 1 Elf Bonus = ${finalRoll}`
+                            : ` = ${finalRoll}`
+                    }`,
+                    "var(--gold)"
+                );
+
+
+                /* =====================================
+                   1-2
+                   FAILED ESCAPE
+                ===================================== */
+                /*
+                 * =========================================
+                 * 1-2 = FAILURE
+                 * Lose 3 levels
+                 * Lose entire inventory
+                 * =========================================
+                 */
+
+                if (finalRoll <= 2) {
+
+                    sfx.trap();
+
+
+                    p.lvl -= 3;
+
+
+                    // Destroy everything
+                    p.inv = [];
+
+
+                    log(
+                        `💀 Escape failed! Level -3. ALL inventory lost!`,
+                        "💀 Escape failed! You lost 3 levels and your entire inventory.",
+                        "var(--red)"
+                    );
+
+@@ -1710,29 +1536,30 @@ <h2>
+                        )
+                        .innerHTML = `
+
+                            <div class="card">
+                            <div class="card run-fail">
+
+                                <span class="m-icon">
+                                    💀
+                                </span>
+
+                                <div class="dice-result">
+                                    ${finalRoll}
+                                <div class="result-title">
+                                    ESCAPE FAILED
+                                </div>
+
+                                <h2 style="color: var(--red)">
+                                    ESCAPE FAILED!
+                                </h2>
+                                <div class="result-detail">
+                                    Roll: ${finalRoll}
+                                </div>
+
+                                <p style="color: var(--red)">
+                                    ⭐ Level -3
+                                </p>
+                                <div class="result-detail">
+                                    Entire inventory lost
+                                </div>
+
+                                <p style="color: var(--red)">
+                                    💥 ALL INVENTORY LOST
+                                </p>
+                                <div class="level-change negative">
+                                    Level -3
+                                </div>
+
+                            </div>
+
+                        `;
+
+
+@@ -1742,48 +1569,43 @@ <h2 style="color: var(--red)">
+                    if (p.lvl <= 0) {
+
+                        triggerDeath(
+                            "You failed to escape and lost 3 levels. All inventory was lost."
+                            "You failed to escape and lost too many levels."
+                        );
+
+                    }
+
+                    else {
+
+                        endTurn();
+                        showControls(
+                            'group-next'
+                        );
+
+                    }
+
+
+                    return;
+
+                }
+
+
+                /* =====================================
+                   3-4
+                   ESCAPE + RANDOM ITEM LOST
+                ===================================== */
+                /*
+                 * =========================================
+                 * 3-4 = ESCAPE
+                 * Lose one random item
+                 * No level loss
+                 * =========================================
+                 */
+
+                if (finalRoll <= 4) {
+                else if (
+                    finalRoll <= 4
+                ) {
+
+                    sfx.success();
+                    let lostItem =
+                        null;
+
+
+                    const levelLoss =
+                        isBoss
+                            ? 2
+                            : 1;
+
+
+                    p.lvl -= levelLoss;
+                    if (
+                        p.inv.length > 0
+                    ) {
+
+
+                    let lostItem = null;
+
+
+                    if (p.inv.length > 0) {
+
+                        const randomIndex =
+                        const index =
+                            Math.floor(
+                                Math.random() *
+                                p.inv.length
+@@ -1792,191 +1614,184 @@ <h2 style="color: var(--red)">
+
+                        lostItem =
+                            p.inv.splice(
+                                randomIndex,
+                                index,
+                                1
+                            )[0];
+
+                    }
+
+
+                    if (lostItem) {
+
+                        log(
+                            `💥 Lost ${lostItem.n} while escaping!`,
+                            "var(--red)"
+                            `👟 You escaped, but lost ${lostItem.n}.`,
+                            "var(--orange)"
+                        );
+
+                    }
+
+                    else {
+
+                        log(
+                            `🎒 No inventory to lose.`,
+                            "var(--gray)"
+                            "👟 You escaped, but had no item to lose.",
+                            "var(--green)"
+                        );
+
+                    }
+
+
+                    log(
+                        `🏃 Escaped! Level -${levelLoss}.`,
+                        "var(--green)"
+                    );
+
+
+                    document
+                        .getElementById(
+                            'event-display'
+                        )
+                        .innerHTML = `
+
+                            <div class="card">
+                            <div class="card run-success">
+
+                                <span class="m-icon">
+                                    🏃
+                                </span>
+
+                                <div class="dice-result">
+                                    ${finalRoll}
+                                </div>
+
+                                <h2 style="color: var(--green)">
+                                <div class="result-title">
+                                    ESCAPED!
+                                </h2>
+                                </div>
+
+                                <p style="color: var(--gold)">
+                                    ⭐ Level -${levelLoss}
+                                </p>
+                                <div class="result-detail">
+                                    Roll: ${finalRoll}
+                                </div>
+
+                                ${
+                                    lostItem
+
+                                    ? `
+
+                                        <p style="color: var(--red)">
+                                            💥 Lost:
+                                            <strong>
+                                        ? `
+                                            <div class="result-detail">
+                                                Lost:
+                                                ${lostItem.e}
+                                                ${lostItem.n}
+                                            </strong>
+                                        </p>
+
+                                    `
+
+                                    : `
+
+                                        <p style="color: #777">
+                                            🎒 No item was available to lose.
+                                        </p>
+
+                                    `
+                                            </div>
+                                        `
+
+                                        : `
+                                            <div class="result-detail">
+                                                No inventory to lose
+                                            </div>
+                                        `
+                                }
+
+                                <div class="level-change neutral">
+                                    No level lost
+                                </div>
+
+                            </div>
+
+                        `;
+
+
+                    updateUI();
+
+
+                    if (p.lvl <= 0) {
+
+                        triggerDeath(
+                            `You escaped, but lost ${levelLoss} level${levelLoss > 1 ? 's' : ''}.`
+                        );
+
+                    }
+
+                    else {
+
+                        endTurn();
+                    showControls(
+                        'group-next'
+                    );
+
+                    }
+                }
+
+
+                    return;
+                /*
+                 * =========================================
+                 * 5-6 = SAFE ESCAPE
+                 *
+                 * Normal monster = -1 level
+                 * Boss = -2 levels
+                 * =========================================
+                 */
+
+                }
+                else {
+
+                    const levelLoss =
+                        isBoss
+                            ? 2
+                            : 1;
+
+                /* =====================================
+                   5-6
+                   SAFE ESCAPE
+                ===================================== */
+
+                sfx.success();
+                    p.lvl -= levelLoss;
+
+
+                const levelLoss =
+                    isBoss
+                        ? 2
+                        : 1;
+                    log(
+                        `🏃 Safe escape! Level -${levelLoss}.`,
+                        "var(--green)"
+                    );
+
+
+                p.lvl -= levelLoss;
+                    document
+                        .getElementById(
+                            'event-display'
+                        )
+                        .innerHTML = `
+
+                            <div class="card run-success">
+
+                log(
+                    `🏆 Safe escape! Level -${levelLoss}. No items lost.`,
+                    "var(--bright-green)"
+                );
+                                <span class="m-icon">
+                                    🏃‍♂️
+                                </span>
+
+                                <div class="result-title">
+                                    SAFE ESCAPE!
+                                </div>
+
+                document
+                    .getElementById(
+                        'event-display'
+                    )
+                    .innerHTML = `
+                                <div class="result-detail">
+                                    Roll: ${finalRoll}
+                                </div>
+
+                        <div class="card">
+                                <div class="result-detail">
+                                    ${
+                                        isBoss
+                                            ? "Escaped from the boss."
+                                            : "Escaped from the monster."
+                                    }
+                                </div>
+
+                            <span class="m-icon">
+                                🏆
+                            </span>
+                                <div class="level-change negative">
+                                    Level -${levelLoss}
+                                </div>
+
+                            <div class="dice-result">
+                                ${finalRoll}
+                            </div>
+
+                            <h2 style="color: var(--bright-green)">
+                                SAFE ESCAPE!
+                            </h2>
+
+                            <p style="color: var(--gold)">
+                                ⭐ Level -${levelLoss}
+                            </p>
+
+                            <p style="color: var(--bright-green)">
+                                🎒 No items lost
+                            </p>
+                        `;
+
+                        </div>
+                    `;
+
+                    updateUI();
+
+                updateUI();
+
+                    if (p.lvl <= 0) {
+
+                if (p.lvl <= 0) {
+                        triggerDeath(
+                            "You escaped, but lost too many levels."
+                        );
+
+                    triggerDeath(
+                        `You escaped safely, but lost ${levelLoss} level${levelLoss > 1 ? 's' : ''}.`
+                    );
+                    }
+
+                }
+                    else {
+
+                else {
+                        showControls(
+                            'group-next'
+                        );
+
+                    endTurn();
+                    }
+
+                }
+
+            },
+
+            800
+        );
+
     }
+
+
+    /* =========================================
+       TRAPS
+    ========================================= */
+    // =========================================================
+    // TRAPS
+    // =========================================================
 
     function spawnTrap() {
-        sfx.trap();
-        const t = Math.floor(Math.random()*3);
-        let msg = ""; let vis = "";
-        if (t === 0) { p.lvl -= 1; msg = "🏹 Arrow Trap! Level -1"; vis="🏹"; }
-        else if (t === 1) { p.lvl = 1; msg = "🌀 Void Portal! Ke Level 1"; vis="🌀"; }
-        else { if(p.inv.length > 0) p.inv.pop(); msg = "👤 Shadow Thief! Item hilang"; vis="👤"; }
-        document.getElementById('event-display').innerHTML = `<div class="card trap"><span class="m-icon">${vis}</span><h2>${msg}</h2></div>`;
-        log(`⚠️ ${msg}`, "var(--purple)");
-        if (p.lvl <= 0) triggerDeath(`Tewas kena jebakan (Level 0).`);
-        else endTurn();
+
+@@ -1990,7 +1805,6 @@ <h2 style="color: var(--bright-green)">
+
+
+        let msg = "";
+
+        let vis = "";
+
+
+@@ -2010,30 +1824,39 @@ <h2 style="color: var(--bright-green)">
+            p.lvl = 1;
+
+            msg =
+                "🌀 Void Portal! Returned to Level 1";
+                "🌀 Void Portal! Back to Level 1";
+
+            vis = "🌀";
+
+        }
+
+        else {
+
+            let lost =
+                null;
+
+
+            if (p.inv.length > 0) {
+
+                const lost =
+                    p.inv.pop();
+                const index =
+                    Math.floor(
+                        Math.random() *
+                        p.inv.length
+                    );
+
+                msg =
+                    `👤 Shadow Thief! ${lost.n} was stolen`;
+                lost =
+                    p.inv.splice(
+                        index,
+                        1
+                    )[0];
+
+            }
+
+            else {
+
+                msg =
+                    "👤 Shadow Thief! But you had no items";
+
+            }
+            msg =
+                lost
+                    ? `👤 Shadow Thief! ${lost.n} stolen`
+                    : "👤 Shadow Thief! Nothing to steal";
+
+            vis = "👤";
+
+@@ -2057,6 +1880,7 @@ <h2>
+                    </h2>
+
+                </div>
+
+            `;
+
+
+@@ -2086,9 +1910,9 @@ <h2>
     }
+
+
+    /* =========================================
+       LOOT
+    ========================================= */
+    // =========================================================
+    // LOOT
+    // =========================================================
 
     function spawnLoot() {
-        sfx.loot();
-        const itemData = ITEMS_BASE[Math.floor(Math.random()*ITEMS_BASE.length)];
-        const newItem = { ...itemData, p: itemData.p + Math.floor(Math.random() * 4) + 1 };
-        let idx = p.inv.findIndex(i => i.id === newItem.id);
+
+@@ -2112,25 +1936,28 @@ <h2>
+                itemData.p +
+                Math.floor(
+                    Math.random() * 4
+                ) + 1
+                ) +
+                1
+
+        };
+
+
+        const idx =
+            p.inv.findIndex(
+                i =>
+                    i.id === newItem.id
+                    i.id ===
+                    newItem.id
+            );
+
+
+        /* =====================================
+           STACK
+        ===================================== */
+        /*
+         * STACK EXISTING ITEM
+         */
+
         if (idx !== -1) {
+
             p.inv[idx].p += newItem.p;
-            log(`✨ Stacking! ${newItem.n} +${newItem.p}`, "var(--gold)");
-            document.getElementById('event-display').innerHTML = `<div class="card loot"><span class="m-icon">🔨</span><h2>STACKED!</h2></div>`;
+            p.inv[idx].p +=
+                newItem.p;
+
+
+            log(
+@@ -2162,23 +1989,24 @@ <h2>
+                        </p>
+
+                    </div>
+
+                `;
+
+
+            updateUI();
+
             endTurn();
-        } else {
-            if (p.inv.length >= 5) {
-                p.pendingItem = newItem;
-                document.getElementById('new-item-name').innerText = `${newItem.e}${newItem.n} (+${newItem.p})`;
-                const list = document.getElementById('swap-list');
-                list.innerHTML = p.inv.map((it, idx) => `<div class="inv-slot selectable" onclick="confirmSwap(${idx})"><span>${it.e}${it.n} (+${it.p})</span><span>🔄</span></div>`).join('');
-                document.getElementById('swap-screen').style.display = 'flex';
-            } else {
-                p.inv.push(newItem); log(`🎁 Dapat ${newItem.n} (+${newItem.p})`, "var(--gold)");
-                document.getElementById('event-display').innerHTML = `<div class="card loot"><span class="m-icon">🎁</span><h2>DAPAT ${newItem.n}</h2></div>`;
-                endTurn();
-            }
+
+            return;
+
         }
+
+
+        /* =====================================
+           INVENTORY FULL
+        ===================================== */
+        /*
+         * INVENTORY FULL
+         */
+
+        if (p.inv.length >= 5) {
+        else if (
+            p.inv.length >= 5
+        ) {
+
+            p.pendingItem =
+                newItem;
+@@ -2199,111 +2027,116 @@ <h2>
+
+
+            list.innerHTML =
+                p.inv
+                    .map(
+                        (it, idx) => `
+
+                            <div
+                                class="inv-slot selectable"
+                                onclick="confirmSwap(${idx})"
+                            >
+
+                                <span>
+                                    ${it.e}
+                                    ${it.n}
+                                    (+${it.p})
+                                </span>
+                p.inv.map(
+                    (it, idx) => `
+
+                        <div
+                            class="inv-slot selectable"
+                            onclick="confirmSwap(${idx})"
+                        >
+
+                            <span>
+                                ${it.e}
+                                ${it.n}
+                                (+${it.p})
+                            </span>
+
+                                <span>
+                                    🔄
+                                </span>
+                            <span>
+                                🔄
+                            </span>
+
+                            </div>
+                        `
+                    )
+                    .join('');
+                        </div>
+
+                    `
+                ).join('');
+
+
+            document
+                .getElementById(
+                    'swap-screen'
+                )
+                .style.display =
+                    'flex';
+
+
+            return;
+                .style.display = 'flex';
+
+        }
+
+
+        /* =====================================
+           NORMAL LOOT
+        ===================================== */
+        /*
+         * ADD NEW ITEM
+         */
+
+        p.inv.push(newItem);
+        else {
+
+            p.inv.push(
+                newItem
+            );
+
+        log(
+            `🎁 Found ${newItem.n} (+${newItem.p})!`,
+            "var(--gold)"
+        );
+
+            log(
+                `🎁 Obtained ${newItem.n} (+${newItem.p})`,
+                "var(--gold)"
+            );
+
+        document
+            .getElementById(
+                'event-display'
+            )
+            .innerHTML = `
+
+                <div class="card loot">
+            document
+                .getElementById(
+                    'event-display'
+                )
+                .innerHTML = `
+
+                    <span class="m-icon">
+                        🎁
+                    </span>
+                    <div class="card loot">
+
+                    <h2>
+                        NEW ITEM!
+                    </h2>
+                        <span class="m-icon">
+                            🎁
+                        </span>
+
+                    <p>
+                        ${newItem.e}
+                        ${newItem.n}
+                        <strong>
+                        <h2>
+                            LOOT FOUND!
+                        </h2>
+
+                        <p>
+                            ${newItem.e}
+                            ${newItem.n}
+                            +${newItem.p}
+                        </strong>
+                    </p>
+                        </p>
+
+                </div>
+            `;
+                    </div>
+
+                `;
+
+        updateUI();
+
+        endTurn();
+            updateUI();
+
+            endTurn();
+
+        }
+
     }
 
-    function confirmSwap(idx) { p.inv[idx] = p.pendingItem; p.pendingItem = null; document.getElementById('swap-screen').style.display = 'none'; endTurn(); }
-    function cancelSwap() { p.pendingItem = null; document.getElementById('swap-screen').style.display = 'none'; endTurn(); }
-    function calculateAtk() { 
-        let items = p.inv.reduce((s, i) => s + i.p + (p.race === 'Dwarf' ? 1 : 0), 0);
-        let total = p.lvl + p.baseAtk + items;
-        if (p.skillActive) { if (p.race === 'Orc') total *= 2; if (p.race === 'Dwarf') total += (p.inv.length * 3); }
-        return total;
+
+    /* =========================================
+       INVENTORY SWAP
+    ========================================= */
+    // =========================================================
+    // INVENTORY SWAP
+    // =========================================================
+
+    function confirmSwap(idx) {
+
+        p.inv[idx] =
+            p.pendingItem;
+
+        p.pendingItem =
+            null;
+
+        log(
+            `🔄 Replaced an item with ${p.pendingItem.n}.`,
+            "var(--gold)"
+        );
+
+
+        p.pendingItem = null;
+
+
+        document
+            .getElementById(
+                'swap-screen'
+            )
+            .style.display =
+                'none';
+            .style.display = 'none';
+
+
+        updateUI();
+@@ -2315,32 +2148,34 @@ <h2>
+
+    function cancelSwap() {
+
+        p.pendingItem =
+            null;
+        if (p.pendingItem) {
+
+            log(
+                `🗑️ Discarded ${p.pendingItem.n}.`,
+                "#888"
+            );
+
+        }
+
+
+        p.pendingItem = null;
+
+
+        document
+            .getElementById(
+                'swap-screen'
+            )
+            .style.display =
+                'none';
+
+
+        log(
+            "🗑️ New item discarded.",
+            "var(--gray)"
+        );
+            .style.display = 'none';
+
+
+        endTurn();
+
     }
+
+
+    /* =========================================
+       ATTACK CALCULATION
+    ========================================= */
+    // =========================================================
+    // ATTACK CALCULATION
+    // =========================================================
+
+    function calculateAtk() {
+
+@@ -2368,8 +2203,10 @@ <h2>
+
+
+        /*
+         * Orc Berserk:
+         * Double total ATK.
+         * IMPORTANT:
+         *
+         * Orc skill doubles ATK.
+         * It does NOT modify level.
+         */
+
+        if (
+@@ -2383,8 +2220,7 @@ <h2>
+
+
+        /*
+         * Dwarf skill:
+         * Add 3 ATK per inventory item.
+         * Dwarf skill
+         */
+
+        if (
+@@ -2403,167 +2239,26 @@ <h2>
+    }
+
+
+    /* =========================================
+       UPDATE UI
+    ========================================= */
+
     function updateUI() {
-        document.getElementById('ui-level').innerText = p.lvl;
-        document.getElementById('ui-atk').innerText = calculateAtk();
-        document.getElementById('ui-inv').innerHTML = p.inv.map(i => `<div class="inv-slot"><span>${i.e} ${i.n}</span> <span>+${i.p}</span></div>`).join('') || '<div class="inv-slot">Kosong</div>';
+
+        document
+            .getElementById(
+                'ui-level'
+            )
+            .innerText =
+                p.lvl;
+
+
+        document
+            .getElementById(
+                'ui-atk'
+            )
+            .innerText =
+                calculateAtk();
+
+
+        document
+            .getElementById(
+                'inventory-count'
+            )
+            .innerText =
+                p.inv.length;
+
+
+        document
+            .getElementById(
+                'ui-inv'
+            )
+            .innerHTML =
+
+                p.inv
+                    .map(
+                        item => `
+
+                            <div class="inv-slot">
+
+                                <span>
+                                    ${item.e}
+                                    ${item.n}
+                                </span>
+
+                                <span>
+                                    +${item.p}
+                                </span>
+
+                            </div>
+                        `
+                    )
+                    .join('')
+
+                ||
+
+                `
+                    <div class="inv-slot">
+                        <span>
+                            🎒 Empty
+                        </span>
+                    </div>
+                `;
+
+
+        updateSkillButton();
+
     }
-    function useSkill() { if(!p.skillUsed){ p.skillActive=true; p.skillUsed=true; log(`🔥 Skill ${p.race} AKTIF!`, "var(--purple)"); updateUI(); }}
-    function endTurn() { p.skillActive=false; p.skillUsed=false; updateUI(); showControls('group-next'); }
-    function resetArena() { document.getElementById('event-display').innerHTML = `<div class="card"><span class="m-icon">🚪</span><h2>Pintu Level ${p.lvl}</h2></div>`; showControls('group-door'); }
-    function log(m, c) { const d = document.createElement('div'); d.className = 'log-entry'; d.style.color = c; d.innerText = `> ${m}`; const l = document.getElementById('game-log'); l.appendChild(d); l.scrollTop = l.scrollHeight; }
-    function triggerDeath(r) { sfx.death(); document.getElementById('death-screen').style.display = 'flex'; document.getElementById('death-reason').innerText = r; }
-</script>
-</body>
-</html>
+
+
+    /* =========================================
+       SKILL BUTTON
+    ========================================= */
+
+    function updateSkillButton() {
+
+        const btn =
+            document.getElementById(
+                'skill-btn'
+            );
+
+
+        if (!btn) {
+            return;
+        }
+
+
+        if (p.race === 'Orc') {
+
+            btn.innerText =
+                p.skillActive
+                    ? "🔥 BERSERK ACTIVE"
+                    : "🔥 BERSERK — ATK ×2";
+
+        }
+
+        else if (p.race === 'Elf') {
+
+            btn.innerText =
+                "👟 ESCAPE BONUS +1";
+
+        }
+
+        else if (p.race === 'Dwarf') {
+
+            btn.innerText =
+                "🔨 DWARVEN POWER";
+
+        }
+
+
+        if (p.skillUsed) {
+
+            btn.disabled =
+                true;
+
+            btn.style.opacity =
+                "0.45";
+
+        }
+
+        else {
+
+            btn.disabled =
+                false;
+
+            btn.style.opacity =
+                "1";
+
+        }
+
+    }
+
+
+    /* =========================================
+       SKILL
+    ========================================= */
+    // =========================================================
+    // SKILL
+    // =========================================================
+
+    function useSkill() {
+
+        if (p.skillUsed) {
+
+            return;
+        }
+
+        }
+
+        /*
+         * Skills only activate during
+         * the current turn.
+         */
+
+        p.skillActive =
+            true;
+        p.skillActive = true;
+
+        p.skillUsed =
+            true;
+        p.skillUsed = true;
+
+
+        log(
+            `🔥 ${p.race} skill ACTIVATED!`,
+            `🔥 ${p.race} skill activated!`,
+            "var(--purple)"
+        );
+
+@@ -2573,38 +2268,40 @@ <h2>
+    }
+
+
+    /* =========================================
+       END TURN
+    ========================================= */
+    // =========================================================
+    // END TURN
+    // =========================================================
+
+    function endTurn() {
+
+        /*
+         * Skill expires after the turn.
+         * Skill is only active for the current turn.
+         */
+
+        p.skillActive =
+            false;
+        p.skillActive = false;
+
+        p.skillUsed =
+            false;
+        p.skillUsed = false;
+
+
+        updateUI();
+
+
+        showControls(
+            'group-next'
+        );
+
+    }
+
+
+    /* =========================================
+       RESET ARENA
+    ========================================= */
+    // =========================================================
+    // RESET ARENA
+    // =========================================================
+
+    function resetArena() {
+
+        p.curEn = null;
+
+
+        document
+            .getElementById(
+                'event-display'
+@@ -2621,76 +2318,69 @@ <h2>
+                        Level ${p.lvl} Door
+                    </h2>
+
+                    <p style="color:#777">
+                        What awaits you?
+                    <p style="color:#666">
+                        What awaits beyond?
+                    </p>
+
+                </div>
+            `;
+
+
+        p.curEn =
+            null;
+            `;
+
+
+        showControls(
+            'group-door'
+        );
+
+
+        updateUI();
+
+    }
+
+
+    /* =========================================
+       LOG
+    ========================================= */
+    // =========================================================
+    // LOG
+    // =========================================================
+
+    function log(
+        message,
+        color
+    ) {
+    function log(m, c) {
+
+        const entry =
+        const d =
+            document.createElement(
+                'div'
+            );
+
+
+        entry.className =
+        d.className =
+            'log-entry';
+
+
+        entry.style.color =
+            color;
+        d.style.color =
+            c;
+
+
+        entry.innerText =
+            `> ${message}`;
+        d.innerText =
+            `> ${m}`;
+
+
+        const logPanel =
+        const l =
+            document.getElementById(
+                'game-log'
+            );
+
+
+        logPanel.appendChild(
+            entry
+        );
+        l.appendChild(d);
+
+
+        logPanel.scrollTop =
+            logPanel.scrollHeight;
+        l.scrollTop =
+            l.scrollHeight;
+
+    }
+
+
+    /* =========================================
+       DEATH
+    ========================================= */
+    // =========================================================
+    // DEATH
+    // =========================================================
+
+    function triggerDeath(
+        reason
+    ) {
+    function triggerDeath(reason) {
+
+        sfx.death();
+
+@@ -2699,8 +2389,7 @@ <h2>
+            .getElementById(
+                'death-screen'
+            )
+            .style.display =
+                'flex';
+            .style.display = 'flex';
+
+
+        document
