@@ -1,448 +1,519 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUNCHING 2</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root {
-            --red: #ff4d4d;
-            --gold: #f0e68c;
-            --dark: #0a0a0a;
-            --purple: #da70d6;
-            --green: #2ecc71;
-            --blue: #3498db;
-            --bright-green: #26ff26;
-            --orange: #ff9f43;
-        }
+<title>MUNCHING 2</title>
 
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
+<style>
+:root {
+    --red: #ff4d4d;
+    --gold: #f0e68c;
+    --dark: #080808;
+    --purple: #da70d6;
+    --green: #2ecc71;
+    --bright-green: #26ff26;
+    --blue: #3498db;
+    --cyan: #00e5ff;
+    --orange: #ff9f43;
+}
 
-        body {
-            background:
-                radial-gradient(circle at top, #171717 0%, #0a0a0a 45%, #050505 100%);
-            color: #eee;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-        .game-wrapper {
-            display: grid;
-            grid-template-columns: 280px 520px 300px;
-            gap: 20px;
-            align-items: start;
-            max-width: 1200px;
-            margin: auto;
-        }
+body {
+    background:
+        radial-gradient(circle at top, #171717 0%, #080808 50%, #000 100%);
+    color: #eee;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
 
-        .panel {
-            background: rgba(17, 17, 17, 0.95);
-            border: 2px solid #333;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-        }
+.game-wrapper {
+    display: grid;
+    grid-template-columns: 280px minmax(480px, 560px) 300px;
+    gap: 20px;
+    max-width: 1200px;
+    margin: auto;
+    align-items: start;
+}
 
-        .stats-box {
-            border-left: 4px solid var(--gold);
-            padding-left: 12px;
-            margin-bottom: 15px;
-            background: rgba(255,255,255,0.02);
-            padding-top: 8px;
-            padding-bottom: 8px;
-            border-radius: 0 8px 8px 0;
-        }
+/* =========================
+   PANELS
+========================= */
 
-        .atk-val {
-            font-size: 2.8rem;
-            color: var(--red);
-            font-weight: bold;
-            text-shadow: 0 0 15px rgba(255,77,77,0.3);
-        }
+.panel {
+    background: rgba(17,17,17,.95);
+    border: 2px solid #292929;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.65);
+}
 
-        .inv-slot {
-            background: #1a1a1a;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: 1px solid #222;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: 0.2s;
-        }
+.stats-box {
+    border-left: 4px solid var(--gold);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: rgba(255,255,255,.025);
+    border-radius: 0 8px 8px 0;
+}
 
-        .inv-slot.selectable {
-            cursor: pointer;
-            border-color: var(--blue);
-        }
+.stats-box small {
+    color: #777;
+    letter-spacing: 1px;
+}
 
-        .inv-slot.selectable:hover {
-            background: #222;
-            transform: scale(1.02);
-            border-color: var(--gold);
-        }
+.atk-val {
+    font-size: 2.8rem;
+    color: var(--red);
+    font-weight: bold;
+}
 
-        .arena-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 550px;
-            text-align: center;
-        }
+.level-val {
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-weight: bold;
+}
 
-        .card {
-            background:
-                linear-gradient(145deg, #1b1b1b, #111);
-            border: 4px solid #444;
-            border-radius: 25px;
-            padding: 40px;
-            width: 100%;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: 0.3s;
-            box-shadow: inset 0 0 30px rgba(255,255,255,0.02);
-        }
+.race-ability {
+    margin-top: 15px;
+    padding: 12px;
+    background: #151515;
+    border-radius: 10px;
+    border: 1px solid #252525;
+    font-size: .82rem;
+    line-height: 1.5;
+}
 
-        .card.monster {
-            border-color: var(--red);
-            box-shadow: 0 0 30px rgba(255,77,77,0.15);
-        }
+.race-ability-title {
+    color: var(--cyan);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
 
-        .card.boss {
-            border-color: var(--purple);
-            box-shadow: 0 0 35px rgba(218,112,214,0.35);
-        }
+/* =========================
+   INVENTORY
+========================= */
 
-        .card.loot {
-            border-color: var(--gold);
-            box-shadow: 0 0 30px rgba(240,230,140,0.15);
-        }
+.inv-slot {
+    background: #161616;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: .8rem;
+    border: 1px solid #252525;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .card.trap {
-            border-color: var(--orange);
-            box-shadow: 0 0 30px rgba(255,159,67,0.15);
-        }
+.inv-slot.selectable {
+    cursor: pointer;
+    border-color: var(--blue);
+}
 
-        .card.run-success {
-            border-color: var(--green);
-            box-shadow: 0 0 30px rgba(46,204,113,0.2);
-        }
+.inv-slot.selectable:hover {
+    background: #222;
+    transform: scale(1.02);
+}
 
-        .card.run-fail {
-            border-color: var(--red);
-            box-shadow: 0 0 30px rgba(255,77,77,0.2);
-        }
+/* =========================
+   ARENA
+========================= */
 
-        .m-icon {
-            font-size: 8rem;
-            margin-bottom: 15px;
-            transition: transform 0.1s, filter 0.2s;
-        }
+.arena-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 600px;
+    text-align: center;
+}
 
-        .m-icon.dead-icon {
-            filter: sepia(1) saturate(10000%) hue-rotate(-50deg) !important;
-            transform: scale(1.1) rotate(5deg);
-            animation: deadShake 0.3s ease-out;
-        }
+#event-display {
+    width: 100%;
+}
 
-        @keyframes deadShake {
-            0% {
-                transform: translate(0, 0);
-            }
+.card {
+    background:
+        linear-gradient(145deg, #1c1c1c, #121212);
+    border: 4px solid #444;
+    border-radius: 25px;
+    padding: 35px;
+    width: 100%;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: .3s;
+    box-shadow: inset 0 0 40px rgba(0,0,0,.4);
+}
 
-            25% {
-                transform: translate(5px, -5px);
-            }
+.card.monster {
+    border-color: var(--red);
+}
 
-            50% {
-                transform: translate(-5px, 5px);
-            }
+.card.boss {
+    border-color: var(--purple);
+    box-shadow:
+        0 0 35px rgba(218,112,214,.35),
+        inset 0 0 30px rgba(218,112,214,.08);
+}
 
-            75% {
-                transform: translate(5px, 5px);
-            }
+.card.loot {
+    border-color: var(--gold);
+}
 
-            100% {
-                transform: scale(1.1) rotate(5deg);
-            }
-        }
+.card.trap {
+    border-color: var(--orange);
+}
 
-        .dice-roll {
-            font-size: 5rem;
-            color: var(--gold);
-            font-weight: bold;
-            animation: pulse 0.3s infinite;
-        }
+.card.run {
+    border-color: var(--blue);
+}
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+.card.result {
+    border-color: var(--green);
+}
 
-            50% {
-                opacity: 0.5;
-                transform: scale(1.1);
-            }
-        }
+.m-icon {
+    font-size: 7rem;
+    margin-bottom: 15px;
+    transition: transform .1s, filter .2s;
+}
 
-        .control-group {
-            width: 100%;
-            margin-top: 25px;
-            display: none;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
+.dead-icon {
+    filter: sepia(1) saturate(10000%) hue-rotate(-50deg) !important;
+    transform: scale(1.1) rotate(5deg);
+    animation: deadShake .3s ease-out;
+}
 
-        button {
-            padding: 18px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.2s;
-            font-size: 0.9rem;
-        }
+@keyframes deadShake {
+    0% {
+        transform: translate(0,0);
+    }
 
-        button:hover {
-            filter: brightness(1.2);
-            transform: translateY(-2px);
-        }
+    25% {
+        transform: translate(5px,-5px);
+    }
 
-        button:active {
-            transform: translateY(0);
-        }
+    50% {
+        transform: translate(-5px,5px);
+    }
 
-        .btn-full {
-            grid-column: span 2;
-        }
+    75% {
+        transform: translate(5px,5px);
+    }
 
-        .btn-blue {
-            background: var(--blue);
-            color: white;
-        }
+    100% {
+        transform: scale(1.1) rotate(5deg);
+    }
+}
 
-        .btn-red {
-            background: var(--red);
-            color: white;
-        }
+/* =========================
+   POWER COMPARISON
+========================= */
 
-        .btn-gold {
-            background: var(--gold);
-            color: black;
-        }
+.power-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 15px;
+    gap: 10px;
+}
 
-        .btn-dark {
-            background: #333;
-            color: #ccc;
-        }
+.power-side {
+    flex: 1;
+    background: #101010;
+    padding: 10px;
+    border-radius: 10px;
+}
 
-        .btn-purple {
-            background: var(--purple);
-            color: white;
-        }
+.power-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
 
-        #overlay,
-        #death-screen,
-        #win-screen,
-        #swap-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
+.vs {
+    color: #555;
+    font-weight: bold;
+}
 
-        .race-card {
-            background: #222;
-            border: 1px solid #444;
-            padding: 25px;
-            border-radius: 20px;
-            width: 280px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin: 10px;
-        }
+/* =========================
+   CONTROLS
+========================= */
 
-        .race-card:hover {
-            border-color: var(--gold);
-            background: #2a2a2a;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(240,230,140,0.1);
-        }
+.control-group {
+    width: 100%;
+    margin-top: 20px;
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
 
-        .log-panel {
-            height: 500px;
-            overflow-y: auto;
-            background: #080808;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            border: 1px solid #222;
-        }
+button {
+    padding: 17px;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: .2s;
+    font-size: .85rem;
+}
 
-        .log-entry {
-            padding: 10px 15px;
-            border-bottom: 1px solid #151515;
-        }
+button:hover {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+}
 
-        .combat-info {
-            display: flex;
-            gap: 30px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #aaa;
-        }
+button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    transform: none;
+}
 
-        .combat-info strong {
-            color: white;
-        }
+.btn-full {
+    grid-column: span 2;
+}
 
-        .result-title {
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 10px 0;
-        }
+.btn-blue {
+    background: var(--blue);
+    color: white;
+}
 
-        .result-detail {
-            color: #aaa;
-            margin: 5px 0;
-        }
+.btn-red {
+    background: var(--red);
+    color: white;
+}
 
-        .level-change {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-top: 15px;
-        }
+.btn-gold {
+    background: var(--gold);
+    color: black;
+}
 
-        .positive {
-            color: var(--green);
-        }
+.btn-dark {
+    background: #333;
+    color: #ccc;
+}
 
-        .negative {
-            color: var(--red);
-        }
+.btn-purple {
+    background: var(--purple);
+    color: white;
+}
 
-        .neutral {
-            color: var(--gold);
-        }
+.btn-green {
+    background: var(--green);
+    color: white;
+}
 
-        .skill-status {
-            font-size: 0.75rem;
-            color: var(--purple);
-            margin-top: 5px;
-        }
+/* =========================
+   DICE
+========================= */
 
-        @media (max-width: 1150px) {
-            .game-wrapper {
-                grid-template-columns: 240px 1fr;
-            }
+.dice-roll {
+    font-size: 5rem;
+    color: var(--gold);
+    font-weight: bold;
+    animation: pulse .3s infinite;
+}
 
-            .log-panel {
-                grid-column: span 2;
-            }
-        }
+@keyframes pulse {
+    0%,100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-        @media (max-width: 750px) {
-            body {
-                padding: 10px;
-            }
+    50% {
+        opacity: .5;
+        transform: scale(1.1);
+    }
+}
 
-            .game-wrapper {
-                grid-template-columns: 1fr;
-            }
+.dice-result {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--gold);
+    margin: 10px;
+}
 
-            .log-panel {
-                grid-column: auto;
-            }
+.run-rule {
+    width: 100%;
+    background: #101010;
+    border: 1px solid #222;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: .8rem;
+    text-align: left;
+}
 
-            .arena-container {
-                min-height: auto;
-            }
+/* =========================
+   LOG
+========================= */
 
-            .card {
-                min-height: 350px;
-            }
+.log-panel {
+    height: 600px;
+    overflow-y: auto;
+    background: #060606;
+    border-radius: 12px;
+    font-size: .82rem;
+    border: 1px solid #222;
+}
 
-            .race-card {
-                width: 90%;
-            }
-        }
-    </style>
+.log-header {
+    position: sticky;
+    top: 0;
+    background: #111;
+    padding: 10px;
+    border-bottom: 1px solid #222;
+    color: #777;
+    font-weight: bold;
+}
+
+.log-entry {
+    padding: 9px 12px;
+    border-bottom: 1px solid #131313;
+}
+
+/* =========================
+   OVERLAYS
+========================= */
+
+#overlay,
+#death-screen,
+#win-screen,
+#swap-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.96);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.race-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.race-card {
+    background: #191919;
+    border: 2px solid #333;
+    padding: 22px;
+    border-radius: 20px;
+    width: 280px;
+    cursor: pointer;
+    transition: .3s;
+    margin: 10px;
+}
+
+.race-card:hover {
+    border-color: var(--gold);
+    background: #242424;
+    transform: translateY(-5px);
+}
+
+.race-card h2 {
+    margin-top: 0;
+}
+
+.race-detail {
+    color: #888;
+    font-size: .8rem;
+    line-height: 1.5;
+}
+
+@media(max-width:1000px) {
+    .game-wrapper {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+    }
+
+    .log-panel {
+        height: 300px;
+    }
+
+    .arena-container {
+        min-height: auto;
+    }
+}
+</style>
 </head>
 
 <body>
 
-<!-- START SCREEN -->
+<!-- =========================
+     START SCREEN
+========================= -->
+
 <div id="overlay">
 
-    <h1 style="color: var(--red); font-size: 3rem;">
+    <h1 style="color:var(--red);font-size:3rem;">
         ⚔️ MUNCHING 2 ⚔️
     </h1>
 
-    <p style="color: #666; margin-bottom: 30px;">
+    <p style="color:#666;margin-bottom:30px;">
         THE RETURN OF LORD MUNCHING
     </p>
 
-    <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+    <div class="race-container">
 
         <div class="race-card" onclick="initGame('Orc')">
-            <h2 style="color: var(--red);">👹 ORC</h2>
-            <p>
-                <small>
-                    +5 Base ATK<br>
-                    🔥 Berserk: Double ATK for one attack
-                </small>
+            <h2 style="color:var(--red);">👹 ORC</h2>
+
+            <p class="race-detail">
+                <b>Base ATK:</b> +5<br>
+                <b>Style:</b> High Risk / High Reward<br><br>
+                🔥 Berserk doubles your ATK for one attack.
             </p>
         </div>
 
         <div class="race-card" onclick="initGame('Elf')">
-            <h2 style="color: var(--blue);">🧝 ELF</h2>
-            <p>
-                <small>
-                    +2 Base ATK<br>
-                    👟 +1 Run Dice
-                </small>
+            <h2 style="color:var(--blue);">🧝 ELF</h2>
+
+            <p class="race-detail">
+                <b>Base ATK:</b> +3<br>
+                <b>Style:</b> Mobility / Escape<br><br>
+                👟 Run rolls receive +2.
             </p>
         </div>
 
         <div class="race-card" onclick="initGame('Dwarf')">
-            <h2 style="color: var(--gold);">🧔 DWARF</h2>
-            <p>
-                <small>
-                    +2 Base ATK<br>
-                    🔨 +1 ATK per Item
-                </small>
+            <h2 style="color:var(--gold);">🧔 DWARF</h2>
+
+            <p class="race-detail">
+                <b>Base ATK:</b> +3<br>
+                <b>Style:</b> Item Scaling<br><br>
+                🔨 Each inventory item grants +2 bonus ATK.
             </p>
         </div>
 
     </div>
 
-    <p style="color: #444; margin-top: 20px;">
-        Choose your race to begin.
+    <p style="color:#444;margin-top:20px;">
+        Choose your race to begin your adventure.
     </p>
 
 </div>
 
 
-<!-- INVENTORY SWAP SCREEN -->
-<div id="swap-screen" style="display: none;">
+<!-- =========================
+     SWAP SCREEN
+========================= -->
 
-    <h2 style="color: var(--gold);">
+<div id="swap-screen" style="display:none;">
+
+    <h2 style="color:var(--gold);">
         🎒 INVENTORY FULL!
     </h2>
 
@@ -451,7 +522,9 @@
         <b id="new-item-name"></b>
     </p>
 
-    <div id="swap-list" style="width: 320px; margin: 20px 0;"></div>
+    <div id="swap-list"
+         style="width:320px;margin:20px 0;">
+    </div>
 
     <button class="btn-dark" onclick="cancelSwap()">
         🗑️ DISCARD
@@ -460,30 +533,36 @@
 </div>
 
 
-<!-- DEATH SCREEN -->
-<div id="death-screen" style="display: none;">
+<!-- =========================
+     DEATH SCREEN
+========================= -->
 
-    <h1 style="color: var(--red); font-size: 4rem;">
+<div id="death-screen" style="display:none;">
+
+    <h1 style="color:var(--red);font-size:4rem;">
         💀 YOU DIED 💀
     </h1>
 
-    <p id="death-reason" style="font-size: 1.2rem;"></p>
+    <p id="death-reason"
+       style="font-size:1.2rem;">
+    </p>
 
-    <button
-        class="btn-red"
-        style="padding: 15px 40px;"
-        onclick="location.reload()"
-    >
+    <button class="btn-red"
+            style="padding:15px 40px;"
+            onclick="location.reload()">
         ♻️ TRY AGAIN
     </button>
 
 </div>
 
 
-<!-- WIN SCREEN -->
-<div id="win-screen" style="display: none;">
+<!-- =========================
+     WIN SCREEN
+========================= -->
 
-    <h1 style="color: var(--gold); font-size: 4rem;">
+<div id="win-screen" style="display:none;">
+
+    <h1 style="color:var(--gold);font-size:4rem;">
         🏆 VICTORY 🏆
     </h1>
 
@@ -491,73 +570,74 @@
         LORD MUNCHING HAS FALLEN!
     </p>
 
-    <button
-        class="btn-gold"
-        style="padding: 15px 40px;"
-        onclick="location.reload()"
-    >
+    <button class="btn-gold"
+            style="padding:15px 40px;"
+            onclick="location.reload()">
         🔄 PLAY AGAIN
     </button>
 
 </div>
 
 
-<!-- GAME -->
+<!-- =========================
+     GAME
+========================= -->
+
 <div class="game-wrapper">
 
     <!-- LEFT PANEL -->
+
     <div class="panel">
 
         <div class="stats-box">
-            <small>👤 HERO</small>
-            <br>
+            <small>👤 HERO</small><br>
             <strong id="ui-race">-</strong>
         </div>
 
         <div class="stats-box">
-            <small>⭐ LEVEL</small>
-            <br>
-            <strong
-                id="ui-level"
-                style="font-size: 1.5rem; color: var(--gold);"
-            >
+            <small>⭐ LEVEL</small><br>
+            <span id="ui-level"
+                  class="level-val">
                 1
-            </strong>
+            </span>
         </div>
 
         <div class="stats-box">
-            <small>💥 TOTAL POWER</small>
-            <br>
-            <span class="atk-val" id="ui-atk">0</span>
+            <small>💥 TOTAL POWER</small><br>
+
+            <span class="atk-val"
+                  id="ui-atk">
+                0
+            </span>
         </div>
 
-        <div id="skill-status" class="skill-status"></div>
+        <div id="skill-status"
+             class="race-ability">
+            <div class="race-ability-title">
+                ABILITY
+            </div>
 
-        <hr
-            style="
-                border: 0;
-                height: 1px;
-                background: #222;
-                margin: 20px 0;
-            "
-        >
+            Choose a race to begin.
+        </div>
 
-        <strong style="font-size: 0.8rem; color: #666;">
+        <hr style="border:0;height:1px;background:#222;margin:20px 0;">
+
+        <strong style="font-size:.8rem;color:#555;">
             🎒 INVENTORY
         </strong>
 
-        <div
-            id="ui-inv"
-            style="margin-top: 10px;"
-        ></div>
+        <div id="ui-inv"
+             style="margin-top:10px;">
+        </div>
 
     </div>
 
 
     <!-- ARENA -->
+
     <div class="panel arena-container">
 
-        <div id="event-display" style="width: 100%;">
+        <div id="event-display">
 
             <div class="card">
 
@@ -575,63 +655,60 @@
 
 
         <!-- DOOR -->
-        <div
-            id="group-door"
-            class="control-group"
-        >
 
-            <button
-                class="btn-blue btn-full"
-                onclick="openDoor()"
-            >
+        <div id="group-door"
+             class="control-group">
+
+            <button class="btn-blue btn-full"
+                    onclick="openDoor()">
+
                 🚪 OPEN DOOR
+
             </button>
 
         </div>
 
 
         <!-- COMBAT -->
-        <div
-            id="group-combat"
-            class="control-group"
-        >
 
-            <button
-                class="btn-red"
-                onclick="handleFight()"
-            >
+        <div id="group-combat"
+             class="control-group">
+
+            <button class="btn-red"
+                    onclick="handleFight()">
+
                 ⚔️ ATTACK
+
             </button>
 
-            <button
-                class="btn-dark"
-                onclick="handleRun()"
-            >
+            <button class="btn-dark"
+                    onclick="handleRun()">
+
                 👟 RUN
+
             </button>
 
-            <button
-                id="skill-btn"
-                class="btn-purple btn-full"
-                onclick="useSkill()"
-            >
+            <button id="skill-btn"
+                    class="btn-purple btn-full"
+                    onclick="useSkill()">
+
                 🔥 SKILL
+
             </button>
 
         </div>
 
 
         <!-- NEXT -->
-        <div
-            id="group-next"
-            class="control-group"
-        >
 
-            <button
-                class="btn-gold btn-full"
-                onclick="resetArena()"
-            >
+        <div id="group-next"
+             class="control-group">
+
+            <button class="btn-gold btn-full"
+                    onclick="resetArena()">
+
                 🏃 CONTINUE
+
             </button>
 
         </div>
@@ -640,1645 +717,798 @@
 
 
     <!-- LOG -->
-    <div
-        class="panel log-panel"
-        id="game-log"
-    ></div>
+
+    <div class="panel log-panel"
+         id="game-log">
+
+        <div class="log-header">
+            📜 ADVENTURE LOG
+        </div>
+
+    </div>
 
 </div>
 
 
 <script>
 
-    // =========================================================
-    // AUDIO ENGINE
-    // =========================================================
+/* =========================================================
+   AUDIO ENGINE
+========================================================= */
 
-    const audioCtx =
-        new (window.AudioContext || window.webkitAudioContext)();
+const audioCtx =
+    new (window.AudioContext ||
+         window.webkitAudioContext)();
 
-    function playNote(freq, type, duration, vol) {
+function playNote(freq,type,duration,vol) {
 
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+    const osc =
+        audioCtx.createOscillator();
 
-        osc.type = type;
+    const gain =
+        audioCtx.createGain();
 
-        osc.frequency.setValueAtTime(
-            freq,
-            audioCtx.currentTime
+    osc.type = type;
+
+    osc.frequency.setValueAtTime(
+        freq,
+        audioCtx.currentTime
+    );
+
+    gain.gain.setValueAtTime(
+        vol,
+        audioCtx.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioCtx.currentTime + duration
+    );
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(
+        audioCtx.currentTime + duration
+    );
+}
+
+
+const sfx = {
+
+    attack: () => {
+        playNote(150,'square',.2,.1);
+        playNote(100,'sawtooth',.3,.1);
+    },
+
+    loot: () => {
+        playNote(880,'sine',.1,.1);
+
+        setTimeout(
+            () => playNote(
+                1320,
+                'sine',
+                .2,
+                .1
+            ),
+            100
+        );
+    },
+
+    trap: () => {
+        playNote(
+            200,
+            'sawtooth',
+            .4,
+            .1
         );
 
-        gain.gain.setValueAtTime(
-            vol,
-            audioCtx.currentTime
+        playNote(
+            180,
+            'sawtooth',
+            .4,
+            .1
+        );
+    },
+
+    run: () => {
+        playNote(
+            440,
+            'triangle',
+            .1,
+            .05
+        );
+    },
+
+    success: () => {
+        playNote(523,'sine',.12,.08);
+        setTimeout(
+            () => playNote(
+                659,
+                'sine',
+                .15,
+                .08
+            ),
+            120
+        );
+    },
+
+    death: () => {
+
+        [
+            300,
+            250,
+            200,
+            150
+        ].forEach(
+            (f,i) => {
+
+                setTimeout(
+                    () => playNote(
+                        f,
+                        'sawtooth',
+                        .5,
+                        .1
+                    ),
+                    i * 150
+                );
+
+            }
         );
 
-        gain.gain.exponentialRampToValueAtTime(
-            0.01,
-            audioCtx.currentTime + duration
+    }
+
+};
+
+
+/* =========================================================
+   GAME DATA
+========================================================= */
+
+const PREFIXES = [
+    "💢 Angry",
+    "🤢 Toxic",
+    "❄️ Frozen",
+    "🔥 Blazing",
+    "💀 Cursed",
+    "🌪️ Swift",
+    "💎 Ancient",
+    "🧬 Mutant",
+    "🌑 Shadow",
+    "🔱 Elite"
+];
+
+
+const SPECIES = [
+
+    {n:"Slime",i:"🧪"},
+    {n:"Goblin",i:"👺"},
+    {n:"Spider",i:"🕷️"},
+    {n:"Skeleton",i:"💀"},
+    {n:"Bat",i:"🦇"},
+    {n:"Wolf",i:"🐺"},
+    {n:"Zombie",i:"🧟"},
+    {n:"Rat",i:"🐀"},
+    {n:"Cobra",i:"🐍"},
+    {n:"Ghost",i:"👻"}
+
+];
+
+
+const ITEMS_BASE = [
+
+    {
+        id:"sword",
+        n:"Sword",
+        e:"⚔️",
+        p:4
+    },
+
+    {
+        id:"shield",
+        n:"Shield",
+        e:"🛡️",
+        p:3
+    },
+
+    {
+        id:"axe",
+        n:"Axe",
+        e:"🪓",
+        p:5
+    },
+
+    {
+        id:"wand",
+        n:"Wand",
+        e:"🪄",
+        p:6
+    },
+
+    {
+        id:"ring",
+        n:"Ring",
+        e:"💍",
+        p:4
+    }
+
+];
+
+
+/* =========================================================
+   PLAYER STATE
+========================================================= */
+
+let p = {
+
+    race:"",
+    lvl:1,
+
+    baseAtk:0,
+
+    inv:[],
+
+    skillUsed:false,
+    skillActive:false,
+
+    curEn:null,
+
+    pendingItem:null
+
+};
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function showControls(gid) {
+
+    document
+        .querySelectorAll('.control-group')
+        .forEach(
+            e => e.style.display = 'none'
         );
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+    document.getElementById(gid)
+        .style.display = 'grid';
+}
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+
+function updateUI() {
+
+    document.getElementById(
+        'ui-level'
+    ).innerText = p.lvl;
+
+    document.getElementById(
+        'ui-atk'
+    ).innerText = calculateAtk();
+
+
+    document.getElementById(
+        'ui-inv'
+    ).innerHTML =
+
+        p.inv.map(
+            i => `
+
+                <div class="inv-slot">
+
+                    <span>
+                        ${i.e} ${i.n}
+                    </span>
+
+                    <span>
+                        +${i.p}
+                    </span>
+
+                </div>
+
+            `
+        ).join('')
+
+        ||
+
+        '<div class="inv-slot">Empty</div>';
+
+
+    updateSkillUI();
+
+}
+
+
+function updateSkillUI() {
+
+    const btn =
+        document.getElementById(
+            'skill-btn'
+        );
+
+    const status =
+        document.getElementById(
+            'skill-status'
+        );
+
+
+    if(p.race === 'Orc') {
+
+        status.innerHTML = `
+            <div class="race-ability-title">
+                🔥 BERSERK
+            </div>
+
+            Double your ATK for one attack.
+        `;
+
+    }
+
+    else if(p.race === 'Elf') {
+
+        status.innerHTML = `
+            <div class="race-ability-title">
+                👟 ELVEN AGILITY
+            </div>
+
+            Run rolls receive +2.
+        `;
+
+    }
+
+    else if(p.race === 'Dwarf') {
+
+        status.innerHTML = `
+            <div class="race-ability-title">
+                🔨 DWARVEN MASTERY
+            </div>
+
+            Each inventory item grants +2 ATK.
+            Skill adds +5 ATK per item for one attack.
+        `;
+
     }
 
 
-    const sfx = {
+    if(p.skillUsed) {
 
-        attack: () => {
+        btn.disabled = true;
+        btn.innerText = "🔥 SKILL USED";
 
-            playNote(
-                150,
-                'square',
-                0.2,
-                0.1
+    }
+
+    else {
+
+        btn.disabled = false;
+
+        if(p.race === 'Orc')
+            btn.innerText = "🔥 BERSERK";
+
+        else if(p.race === 'Dwarf')
+            btn.innerText = "🔨 OVERLOAD";
+
+        else
+            btn.innerText = "✨ SKILL";
+
+    }
+
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function initGame(race) {
+
+    audioCtx.resume();
+
+    p.race = race;
+
+    if(race === 'Orc')
+        p.baseAtk = 5;
+
+    else if(race === 'Elf')
+        p.baseAtk = 3;
+
+    else
+        p.baseAtk = 3;
+
+
+    document.getElementById(
+        'overlay'
+    ).style.display = 'none';
+
+
+    document.getElementById(
+        'ui-race'
+    ).innerText =
+        race.toUpperCase();
+
+
+    showControls(
+        'group-door'
+    );
+
+    updateUI();
+
+    log(
+        `🚪 Your adventure begins as an ${race}.`,
+        "white"
+    );
+
+}
+
+
+/* =========================================================
+   DOOR
+========================================================= */
+
+function openDoor() {
+
+    if(p.lvl === 3) {
+
+        spawnBoss(
+            "🛡️ Kargath the Gatekeeper",
+            20,
+            "👹"
+        );
+
+        return;
+    }
+
+
+    if(p.lvl === 6) {
+
+        const boss =
+            Math.random() > .5
+
+            ? {
+                n:"👑 Xenomorph Queen",
+                p:40,
+                i:"👽"
+            }
+
+            : {
+                n:"🌌 Void Reaver",
+                p:45,
+                i:"👻"
+            };
+
+        spawnBoss(
+            boss.n,
+            boss.p,
+            boss.i
+        );
+
+        return;
+    }
+
+
+    if(p.lvl === 10) {
+
+        spawnBoss(
+            "👑 LORD MUNCHING",
+            85,
+            "🐲"
+        );
+
+        return;
+    }
+
+
+    const rng =
+        Math.random();
+
+
+    if(rng < .45)
+        spawnMonster();
+
+    else if(rng < .70)
+        spawnTrap();
+
+    else
+        spawnLoot();
+
+}
+
+
+/* =========================================================
+   MONSTER
+========================================================= */
+
+function spawnMonster() {
+
+    const spec =
+        SPECIES[
+            Math.floor(
+                Math.random() *
+                SPECIES.length
+            )
+        ];
+
+
+    /*
+        Balanced early-game scaling.
+
+        Level 1:
+        roughly 6–9 power
+
+        instead of 7–11.
+    */
+
+    const power =
+        Math.floor(
+            3 +
+            (p.lvl * 2.8) +
+            (Math.random() * 4)
+        );
+
+
+    p.curEn = {
+
+        n:
+            `${PREFIXES[
+                Math.floor(
+                    Math.random() *
+                    PREFIXES.length
+                )
+            ]} ${spec.n}`,
+
+        pwr:power,
+
+        i:spec.i,
+
+        boss:false
+
+    };
+
+
+    renderEnemyCard(
+        false
+    );
+
+
+    showControls(
+        'group-combat'
+    );
+
+
+    log(
+        `👾 Encountered ${p.curEn.n}!`,
+        "var(--red)"
+    );
+
+}
+
+
+/* =========================================================
+   BOSS
+========================================================= */
+
+function spawnBoss(
+    name,
+    pwr,
+    icon
+) {
+
+    p.curEn = {
+
+        n:name,
+
+        pwr:pwr,
+
+        i:icon,
+
+        boss:true
+
+    };
+
+
+    renderEnemyCard(
+        true
+    );
+
+
+    showControls(
+        'group-combat'
+    );
+
+
+    log(
+        `🔥 BOSS ${name} HAS APPEARED!`,
+        "var(--purple)"
+    );
+
+}
+
+
+/* =========================================================
+   ENEMY CARD
+========================================================= */
+
+function renderEnemyCard(isBoss) {
+
+    const playerPower =
+        calculateAtk();
+
+
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card ${
+            isBoss
+            ? 'boss'
+            : 'monster'
+        }">
+
+            <span class="m-icon">
+                ${p.curEn.i}
+            </span>
+
+            <h2 style="
+                color:
+                ${
+                    isBoss
+                    ? 'var(--purple)'
+                    : 'var(--red)'
+                };
+            ">
+
+                ${p.curEn.n}
+
+            </h2>
+
+
+            <div class="power-box">
+
+                <div class="power-side">
+
+                    <small>
+                        YOUR POWER
+                    </small>
+
+                    <div
+                        class="power-number"
+                        style="color:var(--green)"
+                    >
+                        ${playerPower}
+                    </div>
+
+                </div>
+
+
+                <div class="vs">
+                    VS
+                </div>
+
+
+                <div class="power-side">
+
+                    <small>
+                        ENEMY POWER
+                    </small>
+
+                    <div
+                        class="power-number"
+                        style="
+                            color:
+                            ${
+                                isBoss
+                                ? 'var(--purple)'
+                                : 'var(--red)'
+                            };
+                        "
+                    >
+                        ${p.curEn.pwr}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            ${
+                isBoss
+                ? `<p style="color:var(--purple);font-weight:bold;">
+                        👑 BOSS
+                   </p>`
+                : ''
+            }
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ATTACK
+========================================================= */
+
+function handleFight() {
+
+    sfx.attack();
+
+
+    const attackPower =
+        calculateAtk();
+
+
+    const enemyPower =
+        p.curEn.pwr;
+
+
+    log(
+        `⚔️ You attack with ${attackPower} Power!`,
+        "white"
+    );
+
+
+    if(attackPower >= enemyPower) {
+
+        const enemyIcon =
+            document.querySelector(
+                '.m-icon'
             );
 
-            playNote(
-                100,
-                'sawtooth',
-                0.3,
-                0.1
+
+        if(enemyIcon)
+            enemyIcon.classList.add(
+                'dead-icon'
             );
 
-        },
 
-        loot: () => {
+        log(
+            `✅ Victory! ${p.curEn.n} was defeated.`,
+            "var(--bright-green)"
+        );
 
-            playNote(
-                880,
-                'sine',
-                0.1,
-                0.1
-            );
+
+        if(p.lvl >= 10) {
 
             setTimeout(
                 () =>
-                    playNote(
-                        1320,
-                        'sine',
-                        0.2,
-                        0.1
-                    ),
-                100
+                    document.getElementById(
+                        'win-screen'
+                    ).style.display = 'flex',
+                600
             );
-
-        },
-
-        trap: () => {
-
-            playNote(
-                200,
-                'sawtooth',
-                0.4,
-                0.1
-            );
-
-            playNote(
-                180,
-                'sawtooth',
-                0.4,
-                0.1
-            );
-
-        },
-
-        run: () => {
-
-            playNote(
-                440,
-                'triangle',
-                0.1,
-                0.05
-            );
-
-        },
-
-        death: () => {
-
-            [300, 250, 200, 150].forEach(
-                (f, i) => {
-
-                    setTimeout(
-                        () =>
-                            playNote(
-                                f,
-                                'sawtooth',
-                                0.5,
-                                0.1
-                            ),
-                        i * 150
-                    );
-
-                }
-            );
-
-        }
-
-    };
-
-
-    function startBGM() {
-
-        const notes = [
-            261.63,
-            329.63,
-            392.00,
-            329.63
-        ];
-
-        let i = 0;
-
-        setInterval(() => {
-
-            playNote(
-                notes[i % notes.length] / 2,
-                'triangle',
-                0.5,
-                0.02
-            );
-
-            i++;
-
-        }, 600);
-
-    }
-
-
-    // =========================================================
-    // GAME DATA
-    // =========================================================
-
-    const PREFIXES = [
-
-        "💢 Angry",
-        "🤢 Toxic",
-        "❄️ Frozen",
-        "🔥 Blazing",
-        "💀 Cursed",
-        "🌪️ Swift",
-        "💎 Ancient",
-        "🧬 Mutant",
-        "🌑 Shadow",
-        "🔱 Elite"
-
-    ];
-
-
-    const SPECIES = [
-
-        {
-            n: "Slime",
-            i: "🧪"
-        },
-
-        {
-            n: "Goblin",
-            i: "👺"
-        },
-
-        {
-            n: "Spider",
-            i: "🕷️"
-        },
-
-        {
-            n: "Skeleton",
-            i: "💀"
-        },
-
-        {
-            n: "Bat",
-            i: "🦇"
-        },
-
-        {
-            n: "Wolf",
-            i: "🐺"
-        },
-
-        {
-            n: "Zombie",
-            i: "🧟"
-        },
-
-        {
-            n: "Rat",
-            i: "🐀"
-        },
-
-        {
-            n: "Cobra",
-            i: "🐍"
-        },
-
-        {
-            n: "Ghost",
-            i: "👻"
-        }
-
-    ];
-
-
-    const ITEMS_BASE = [
-
-        {
-            id: "sword",
-            n: "Sword",
-            e: "⚔️",
-            p: 4
-        },
-
-        {
-            id: "shield",
-            n: "Shield",
-            e: "🛡️",
-            p: 3
-        },
-
-        {
-            id: "axe",
-            n: "Axe",
-            e: "🪓",
-            p: 5
-        },
-
-        {
-            id: "wand",
-            n: "Wand",
-            e: "🪄",
-            p: 6
-        },
-
-        {
-            id: "ring",
-            n: "Ring",
-            e: "💍",
-            p: 4
-        }
-
-    ];
-
-
-    // =========================================================
-    // PLAYER STATE
-    // =========================================================
-
-    let p = {
-
-        race: "",
-
-        lvl: 1,
-
-        baseAtk: 0,
-
-        inv: [],
-
-        skillUsed: false,
-
-        skillActive: false,
-
-        curEn: null,
-
-        pendingItem: null
-
-    };
-
-
-    // =========================================================
-    // UI
-    // =========================================================
-
-    function showControls(gid) {
-
-        document
-            .querySelectorAll('.control-group')
-            .forEach(
-                e =>
-                    e.style.display = 'none'
-            );
-
-        document
-            .getElementById(gid)
-            .style.display = 'grid';
-
-    }
-
-
-    function updateUI() {
-
-        document
-            .getElementById('ui-level')
-            .innerText = p.lvl;
-
-        document
-            .getElementById('ui-atk')
-            .innerText = calculateAtk();
-
-
-        document
-            .getElementById('ui-inv')
-            .innerHTML =
-                p.inv.map(
-                    i => `
-                        <div class="inv-slot">
-                            <span>
-                                ${i.e} ${i.n}
-                            </span>
-
-                            <span>
-                                +${i.p}
-                            </span>
-                        </div>
-                    `
-                ).join('')
-
-                ||
-
-                '<div class="inv-slot">Empty</div>';
-
-
-        const skillStatus =
-            document.getElementById(
-                'skill-status'
-            );
-
-        if (p.skillActive) {
-
-            skillStatus.innerText =
-                "🔥 SKILL ACTIVE";
-
-        } else if (p.skillUsed) {
-
-            skillStatus.innerText =
-                "Skill already used";
-
-        } else {
-
-            skillStatus.innerText =
-                "";
-
-        }
-
-    }
-
-
-    // =========================================================
-    // GAME START
-    // =========================================================
-
-    function initGame(race) {
-
-        audioCtx.resume();
-
-        startBGM();
-
-        p.race = race;
-
-        p.baseAtk =
-            race === 'Orc'
-                ? 5
-                : 2;
-
-
-        document
-            .getElementById('overlay')
-            .style.display = 'none';
-
-
-        document
-            .getElementById('ui-race')
-            .innerText =
-                race.toUpperCase();
-
-
-        showControls(
-            'group-door'
-        );
-
-        updateUI();
-
-        log(
-            `🚪 Adventure begins! You are an ${race}.`,
-            "white"
-        );
-
-    }
-
-
-    // =========================================================
-    // DOOR
-    // =========================================================
-
-    function openDoor() {
-
-        if (p.lvl === 3) {
-
-            spawnBoss(
-                "🛡️ Kargath the Gatekeeper",
-                20,
-                "👹"
-            );
-
-        }
-
-        else if (p.lvl === 6) {
-
-            const boss =
-                Math.random() > 0.5
-
-                    ? {
-                        n: "👑 Xenomorph Queen",
-                        p: 40,
-                        i: "👽"
-                    }
-
-                    : {
-                        n: "🌌 Void Reaver",
-                        p: 45,
-                        i: "👻"
-                    };
-
-            spawnBoss(
-                boss.n,
-                boss.p,
-                boss.i
-            );
-
-        }
-
-        else if (p.lvl === 10) {
-
-            spawnBoss(
-                "👑 LORD MUNCHING",
-                85,
-                "🐲"
-            );
-
-        }
-
-        else {
-
-            const rng =
-                Math.random();
-
-            if (rng < 0.45) {
-
-                spawnMonster();
-
-            }
-
-            else if (rng < 0.70) {
-
-                spawnTrap();
-
-            }
-
-            else {
-
-                spawnLoot();
-
-            }
-
-        }
-
-    }
-
-
-    // =========================================================
-    // MONSTER
-    // =========================================================
-
-    function spawnMonster() {
-
-        const spec =
-            SPECIES[
-                Math.floor(
-                    Math.random() *
-                    SPECIES.length
-                )
-            ];
-
-
-        const power =
-            Math.floor(
-                4 +
-                (p.lvl * 3.5) +
-                (Math.random() * 5)
-            );
-
-
-        p.curEn = {
-
-            n:
-                `${
-                    PREFIXES[
-                        Math.floor(
-                            Math.random() *
-                            PREFIXES.length
-                        )
-                    ]
-                } ${spec.n}`,
-
-            pwr: power,
-
-            i: spec.i,
-
-            boss: false
-
-        };
-
-
-        document
-            .getElementById(
-                'event-display'
-            )
-            .innerHTML = `
-
-                <div class="card monster">
-
-                    <span class="m-icon">
-                        ${spec.i}
-                    </span>
-
-                    <h2 style="color: var(--red)">
-                        ${p.curEn.n}
-                    </h2>
-
-                    <div class="combat-info">
-
-                        <span>
-                            Enemy Power:
-                            <strong>${power}</strong>
-                        </span>
-
-                        <span>
-                            Your Power:
-                            <strong>${calculateAtk()}</strong>
-                        </span>
-
-                    </div>
-
-                </div>
-
-            `;
-
-
-        showControls(
-            'group-combat'
-        );
-
-
-        log(
-            `👾 Encountered ${p.curEn.n}!`,
-            "var(--red)"
-        );
-
-    }
-
-
-    // =========================================================
-    // BOSS
-    // =========================================================
-
-    function spawnBoss(
-        name,
-        pwr,
-        icon
-    ) {
-
-        p.curEn = {
-
-            n: name,
-
-            pwr: pwr,
-
-            i: icon,
-
-            boss: true
-
-        };
-
-
-        document
-            .getElementById(
-                'event-display'
-            )
-            .innerHTML = `
-
-                <div class="card boss">
-
-                    <span class="m-icon">
-                        ${icon}
-                    </span>
-
-                    <h2 style="color:var(--purple)">
-                        ${name}
-                    </h2>
-
-                    <div class="combat-info">
-
-                        <span>
-                            Boss Power:
-                            <strong>${pwr}</strong>
-                        </span>
-
-                        <span>
-                            Your Power:
-                            <strong>${calculateAtk()}</strong>
-                        </span>
-
-                    </div>
-
-                </div>
-
-            `;
-
-
-        showControls(
-            'group-combat'
-        );
-
-
-        log(
-            `🔥 BOSS ${name} HAS APPEARED!`,
-            "var(--purple)"
-        );
-
-    }
-
-
-    // =========================================================
-    // ATTACK
-    // =========================================================
-
-    function handleFight() {
-
-        sfx.attack();
-
-
-        const attackPower =
-            calculateAtk();
-
-
-        log(
-            `⚔️ You attack with ${attackPower} Power!`,
-            "var(--gold)"
-        );
-
-
-        if (
-            attackPower >=
-            p.curEn.pwr
-        ) {
-
-            const enemyIcon =
-                document.querySelector(
-                    '.m-icon'
-                );
-
-
-            if (enemyIcon) {
-
-                enemyIcon.classList.add(
-                    'dead-icon'
-                );
-
-            }
-
-
-            log(
-                `✅ You defeated ${p.curEn.n}!`,
-                "var(--bright-green)"
-            );
-
-
-            if (p.lvl >= 10) {
-
-                setTimeout(
-                    () =>
-                        document
-                            .getElementById(
-                                'win-screen'
-                            )
-                            .style.display = 'flex',
-
-                    500
-                );
-
-                return;
-
-            }
-
-
-            p.lvl++;
-
-
-            /*
-             * Orc Berserk no longer modifies the player's level.
-             * The skill only affects the current attack.
-             */
-
-            setTimeout(
-                endTurn,
-                500
-            );
-
-        }
-
-        else {
-
-            log(
-                `❌ You lost the fight! Level -2.`,
-                "var(--red)"
-            );
-
-
-            p.lvl -= 2;
-
-
-            if (p.lvl <= 0) {
-
-                triggerDeath(
-                    `You were defeated by ${p.curEn.n}.`
-                );
-
-            }
-
-            else {
-
-                endTurn();
-
-            }
-
-        }
-
-    }
-
-
-    // =========================================================
-    // RUN
-    // =========================================================
-
-    function handleRun() {
-
-        /*
-         * Save whether this is a boss before the
-         * enemy state changes.
-         */
-
-        const isBoss =
-            p.curEn &&
-            p.curEn.boss === true;
-
-
-        document
-            .getElementById(
-                'event-display'
-            )
-            .innerHTML = `
-
-                <div class="card">
-
-                    <div class="dice-roll">
-                        🎲
-                    </div>
-
-                    <p>
-                        ROLLING...
-                    </p>
-
-                </div>
-
-            `;
-
-
-        let rolls = 0;
-
-
-        const interval =
-            setInterval(
-                () => {
-
-                    sfx.run();
-
-                    rolls++;
-
-                    if (rolls > 5) {
-
-                        clearInterval(
-                            interval
-                        );
-
-                    }
-
-                },
-                100
-            );
-
-
-        setTimeout(
-            () => {
-
-                const roll =
-                    Math.floor(
-                        Math.random() * 6
-                    ) + 1;
-
-
-                const finalRoll =
-                    roll +
-                    (
-                        p.race === 'Elf'
-                            ? 1
-                            : 0
-                    );
-
-
-                log(
-                    `🎲 Dice Roll: ${roll}${
-                        p.race === 'Elf'
-                            ? ` + 1 Elf Bonus = ${finalRoll}`
-                            : ` = ${finalRoll}`
-                    }`,
-                    "var(--gold)"
-                );
-
-
-                /*
-                 * =========================================
-                 * 1-2 = FAILURE
-                 * Lose 3 levels
-                 * Lose entire inventory
-                 * =========================================
-                 */
-
-                if (finalRoll <= 2) {
-
-                    p.lvl -= 3;
-
-                    p.inv = [];
-
-
-                    log(
-                        "💀 Escape failed! You lost 3 levels and your entire inventory.",
-                        "var(--red)"
-                    );
-
-
-                    document
-                        .getElementById(
-                            'event-display'
-                        )
-                        .innerHTML = `
-
-                            <div class="card run-fail">
-
-                                <span class="m-icon">
-                                    💀
-                                </span>
-
-                                <div class="result-title">
-                                    ESCAPE FAILED
-                                </div>
-
-                                <div class="result-detail">
-                                    Roll: ${finalRoll}
-                                </div>
-
-                                <div class="result-detail">
-                                    Entire inventory lost
-                                </div>
-
-                                <div class="level-change negative">
-                                    Level -3
-                                </div>
-
-                            </div>
-
-                        `;
-
-
-                    updateUI();
-
-
-                    if (p.lvl <= 0) {
-
-                        triggerDeath(
-                            "You failed to escape and lost too many levels."
-                        );
-
-                    }
-
-                    else {
-
-                        showControls(
-                            'group-next'
-                        );
-
-                    }
-
-                }
-
-
-                /*
-                 * =========================================
-                 * 3-4 = ESCAPE
-                 * Lose one random item
-                 * No level loss
-                 * =========================================
-                 */
-
-                else if (
-                    finalRoll <= 4
-                ) {
-
-                    let lostItem =
-                        null;
-
-
-                    if (
-                        p.inv.length > 0
-                    ) {
-
-                        const index =
-                            Math.floor(
-                                Math.random() *
-                                p.inv.length
-                            );
-
-
-                        lostItem =
-                            p.inv.splice(
-                                index,
-                                1
-                            )[0];
-
-                    }
-
-
-                    if (lostItem) {
-
-                        log(
-                            `👟 You escaped, but lost ${lostItem.n}.`,
-                            "var(--orange)"
-                        );
-
-                    }
-
-                    else {
-
-                        log(
-                            "👟 You escaped, but had no item to lose.",
-                            "var(--green)"
-                        );
-
-                    }
-
-
-                    document
-                        .getElementById(
-                            'event-display'
-                        )
-                        .innerHTML = `
-
-                            <div class="card run-success">
-
-                                <span class="m-icon">
-                                    🏃
-                                </span>
-
-                                <div class="result-title">
-                                    ESCAPED!
-                                </div>
-
-                                <div class="result-detail">
-                                    Roll: ${finalRoll}
-                                </div>
-
-                                ${
-                                    lostItem
-
-                                        ? `
-                                            <div class="result-detail">
-                                                Lost:
-                                                ${lostItem.e}
-                                                ${lostItem.n}
-                                            </div>
-                                        `
-
-                                        : `
-                                            <div class="result-detail">
-                                                No inventory to lose
-                                            </div>
-                                        `
-                                }
-
-                                <div class="level-change neutral">
-                                    No level lost
-                                </div>
-
-                            </div>
-
-                        `;
-
-
-                    updateUI();
-
-
-                    showControls(
-                        'group-next'
-                    );
-
-                }
-
-
-                /*
-                 * =========================================
-                 * 5-6 = SAFE ESCAPE
-                 *
-                 * Normal monster = -1 level
-                 * Boss = -2 levels
-                 * =========================================
-                 */
-
-                else {
-
-                    const levelLoss =
-                        isBoss
-                            ? 2
-                            : 1;
-
-
-                    p.lvl -= levelLoss;
-
-
-                    log(
-                        `🏃 Safe escape! Level -${levelLoss}.`,
-                        "var(--green)"
-                    );
-
-
-                    document
-                        .getElementById(
-                            'event-display'
-                        )
-                        .innerHTML = `
-
-                            <div class="card run-success">
-
-                                <span class="m-icon">
-                                    🏃‍♂️
-                                </span>
-
-                                <div class="result-title">
-                                    SAFE ESCAPE!
-                                </div>
-
-                                <div class="result-detail">
-                                    Roll: ${finalRoll}
-                                </div>
-
-                                <div class="result-detail">
-                                    ${
-                                        isBoss
-                                            ? "Escaped from the boss."
-                                            : "Escaped from the monster."
-                                    }
-                                </div>
-
-                                <div class="level-change negative">
-                                    Level -${levelLoss}
-                                </div>
-
-                            </div>
-
-                        `;
-
-
-                    updateUI();
-
-
-                    if (p.lvl <= 0) {
-
-                        triggerDeath(
-                            "You escaped, but lost too many levels."
-                        );
-
-                    }
-
-                    else {
-
-                        showControls(
-                            'group-next'
-                        );
-
-                    }
-
-                }
-
-            },
-
-            800
-        );
-
-    }
-
-
-    // =========================================================
-    // TRAPS
-    // =========================================================
-
-    function spawnTrap() {
-
-        sfx.trap();
-
-
-        const t =
-            Math.floor(
-                Math.random() * 3
-            );
-
-
-        let msg = "";
-        let vis = "";
-
-
-        if (t === 0) {
-
-            p.lvl -= 1;
-
-            msg =
-                "🏹 Arrow Trap! Level -1";
-
-            vis = "🏹";
-
-        }
-
-        else if (t === 1) {
-
-            p.lvl = 1;
-
-            msg =
-                "🌀 Void Portal! Back to Level 1";
-
-            vis = "🌀";
-
-        }
-
-        else {
-
-            let lost =
-                null;
-
-
-            if (p.inv.length > 0) {
-
-                const index =
-                    Math.floor(
-                        Math.random() *
-                        p.inv.length
-                    );
-
-                lost =
-                    p.inv.splice(
-                        index,
-                        1
-                    )[0];
-
-            }
-
-
-            msg =
-                lost
-                    ? `👤 Shadow Thief! ${lost.n} stolen`
-                    : "👤 Shadow Thief! Nothing to steal";
-
-            vis = "👤";
-
-        }
-
-
-        document
-            .getElementById(
-                'event-display'
-            )
-            .innerHTML = `
-
-                <div class="card trap">
-
-                    <span class="m-icon">
-                        ${vis}
-                    </span>
-
-                    <h2>
-                        ${msg}
-                    </h2>
-
-                </div>
-
-            `;
-
-
-        log(
-            `⚠️ ${msg}`,
-            "var(--purple)"
-        );
-
-
-        updateUI();
-
-
-        if (p.lvl <= 0) {
-
-            triggerDeath(
-                "You died because of a trap."
-            );
-
-        }
-
-        else {
-
-            endTurn();
-
-        }
-
-    }
-
-
-    // =========================================================
-    // LOOT
-    // =========================================================
-
-    function spawnLoot() {
-
-        sfx.loot();
-
-
-        const itemData =
-            ITEMS_BASE[
-                Math.floor(
-                    Math.random() *
-                    ITEMS_BASE.length
-                )
-            ];
-
-
-        const newItem = {
-
-            ...itemData,
-
-            p:
-                itemData.p +
-                Math.floor(
-                    Math.random() * 4
-                ) +
-                1
-
-        };
-
-
-        const idx =
-            p.inv.findIndex(
-                i =>
-                    i.id ===
-                    newItem.id
-            );
-
-
-        /*
-         * STACK EXISTING ITEM
-         */
-
-        if (idx !== -1) {
-
-            p.inv[idx].p +=
-                newItem.p;
-
-
-            log(
-                `✨ Stacked ${newItem.n} +${newItem.p}!`,
-                "var(--gold)"
-            );
-
-
-            document
-                .getElementById(
-                    'event-display'
-                )
-                .innerHTML = `
-
-                    <div class="card loot">
-
-                        <span class="m-icon">
-                            🔨
-                        </span>
-
-                        <h2>
-                            STACKED!
-                        </h2>
-
-                        <p>
-                            ${newItem.e}
-                            ${newItem.n}
-                            +${newItem.p}
-                        </p>
-
-                    </div>
-
-                `;
-
-
-            updateUI();
-
-            endTurn();
-
-        }
-
-
-        /*
-         * INVENTORY FULL
-         */
-
-        else if (
-            p.inv.length >= 5
-        ) {
-
-            p.pendingItem =
-                newItem;
-
-
-            document
-                .getElementById(
-                    'new-item-name'
-                )
-                .innerText =
-                    `${newItem.e} ${newItem.n} (+${newItem.p})`;
-
-
-            const list =
-                document.getElementById(
-                    'swap-list'
-                );
-
-
-            list.innerHTML =
-                p.inv.map(
-                    (it, idx) => `
-
-                        <div
-                            class="inv-slot selectable"
-                            onclick="confirmSwap(${idx})"
-                        >
-
-                            <span>
-                                ${it.e}
-                                ${it.n}
-                                (+${it.p})
-                            </span>
-
-                            <span>
-                                🔄
-                            </span>
-
-                        </div>
-
-                    `
-                ).join('');
-
-
-            document
-                .getElementById(
-                    'swap-screen'
-                )
-                .style.display = 'flex';
-
-        }
-
-
-        /*
-         * ADD NEW ITEM
-         */
-
-        else {
-
-            p.inv.push(
-                newItem
-            );
-
-
-            log(
-                `🎁 Obtained ${newItem.n} (+${newItem.p})`,
-                "var(--gold)"
-            );
-
-
-            document
-                .getElementById(
-                    'event-display'
-                )
-                .innerHTML = `
-
-                    <div class="card loot">
-
-                        <span class="m-icon">
-                            🎁
-                        </span>
-
-                        <h2>
-                            LOOT FOUND!
-                        </h2>
-
-                        <p>
-                            ${newItem.e}
-                            ${newItem.n}
-                            +${newItem.p}
-                        </p>
-
-                    </div>
-
-                `;
-
-
-            updateUI();
-
-            endTurn();
-
-        }
-
-    }
-
-
-    // =========================================================
-    // INVENTORY SWAP
-    // =========================================================
-
-    function confirmSwap(idx) {
-
-        p.inv[idx] =
-            p.pendingItem;
-
-
-        log(
-            `🔄 Replaced an item with ${p.pendingItem.n}.`,
-            "var(--gold)"
-        );
-
-
-        p.pendingItem = null;
-
-
-        document
-            .getElementById(
-                'swap-screen'
-            )
-            .style.display = 'none';
-
-
-        updateUI();
-
-        endTurn();
-
-    }
-
-
-    function cancelSwap() {
-
-        if (p.pendingItem) {
-
-            log(
-                `🗑️ Discarded ${p.pendingItem.n}.`,
-                "#888"
-            );
-
-        }
-
-
-        p.pendingItem = null;
-
-
-        document
-            .getElementById(
-                'swap-screen'
-            )
-            .style.display = 'none';
-
-
-        endTurn();
-
-    }
-
-
-    // =========================================================
-    // ATTACK CALCULATION
-    // =========================================================
-
-    function calculateAtk() {
-
-        let items =
-            p.inv.reduce(
-                (sum, item) => {
-
-                    return sum +
-                        item.p +
-                        (
-                            p.race === 'Dwarf'
-                                ? 1
-                                : 0
-                        );
-
-                },
-                0
-            );
-
-
-        let total =
-            p.lvl +
-            p.baseAtk +
-            items;
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Orc skill doubles ATK.
-         * It does NOT modify level.
-         */
-
-        if (
-            p.skillActive &&
-            p.race === 'Orc'
-        ) {
-
-            total *= 2;
-
-        }
-
-
-        /*
-         * Dwarf skill
-         */
-
-        if (
-            p.skillActive &&
-            p.race === 'Dwarf'
-        ) {
-
-            total +=
-                p.inv.length * 3;
-
-        }
-
-
-        return total;
-
-    }
-
-
-    // =========================================================
-    // SKILL
-    // =========================================================
-
-    function useSkill() {
-
-        if (p.skillUsed) {
 
             return;
+        }
+
+
+        p.lvl++;
+
+
+        /*
+            Orc Berserk is ONLY
+            consumed by this attack.
+        */
+
+        if(
+            p.race === 'Orc' &&
+            p.skillActive
+        ) {
+
+            log(
+                "🔥 Berserk consumed!",
+                "var(--purple)"
+            );
 
         }
 
 
-        p.skillActive = true;
+        p.skillActive = false;
 
-        p.skillUsed = true;
-
-
-        log(
-            `🔥 ${p.race} skill activated!`,
-            "var(--purple)"
-        );
-
-
-        updateUI();
-
-    }
-
-
-    // =========================================================
-    // END TURN
-    // =========================================================
-
-    function endTurn() {
 
         /*
-         * Skill is only active for the current turn.
-         */
-
-        p.skillActive = false;
+            Reset skill so it can
+            be used again on the next encounter.
+        */
 
         p.skillUsed = false;
 
@@ -2286,120 +1516,1052 @@
         updateUI();
 
 
-        showControls(
-            'group-next'
+        setTimeout(
+            endTurn,
+            600
+        );
+
+    }
+
+    else {
+
+        log(
+            `❌ Defeat! You lost 2 levels.`,
+            "var(--red)"
+        );
+
+
+        p.lvl -= 2;
+
+
+        p.skillActive = false;
+        p.skillUsed = false;
+
+
+        if(p.lvl <= 0) {
+
+            triggerDeath(
+                `You were defeated by ${p.curEn.n}.`
+            );
+
+            return;
+        }
+
+
+        endTurn();
+
+    }
+
+}
+
+
+/* =========================================================
+   RUN
+========================================================= */
+
+function handleRun() {
+
+    /*
+        Disable controls while rolling.
+    */
+
+    showControls(
+        'group-next'
+    );
+
+
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card run">
+
+            <div class="dice-roll">
+                🎲
+            </div>
+
+            <h2>
+                ROLLING...
+            </h2>
+
+            <div class="run-rule">
+
+                <b>RUN RULES</b><br><br>
+
+                1–2 → Fail:
+                -3 Levels + lose all items<br>
+
+                3–4 → Escape:
+                Lose 1 random item<br>
+
+                5–6 → Safe Escape:
+                Normal -1 Level |
+                Boss -2 Levels
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    let rolls = 0;
+
+
+    const interval =
+        setInterval(
+            () => {
+
+                sfx.run();
+
+                rolls++;
+
+                if(rolls >= 6)
+                    clearInterval(
+                        interval
+                    );
+
+            },
+            100
+        );
+
+
+    setTimeout(
+        () => {
+
+            const roll =
+                Math.floor(
+                    Math.random() * 6
+                ) + 1;
+
+
+            const finalRoll =
+                roll +
+                (
+                    p.race === 'Elf'
+                    ? 2
+                    : 0
+                );
+
+
+            showRunResult(
+                roll,
+                finalRoll
+            );
+
+        },
+        800
+    );
+
+}
+
+
+/* =========================================================
+   RUN RESULT
+========================================================= */
+
+function showRunResult(
+    naturalRoll,
+    finalRoll
+) {
+
+    const isBoss =
+        p.curEn &&
+        p.curEn.boss;
+
+
+    let title = "";
+    let message = "";
+    let color = "";
+    let icon = "";
+
+
+    /*
+        Important:
+
+        Elf gets +2, but the actual
+        outcome is based on the
+        MODIFIED result.
+    */
+
+
+    if(finalRoll <= 2) {
+
+        icon = "💀";
+        color = "var(--red)";
+
+        title = "FAILED ESCAPE";
+
+        p.lvl -= 3;
+
+        p.inv = [];
+
+
+        message =
+            `You rolled ${naturalRoll}` +
+            (
+                p.race === 'Elf'
+                ? ` (+2 = ${finalRoll})`
+                : ``
+            ) +
+            `. You lost 3 levels and all inventory.`;
+
+        log(
+            `❌ Failed escape! Roll ${finalRoll}. -3 Levels. ALL ITEMS LOST.`,
+            "var(--red)"
         );
 
     }
 
 
-    // =========================================================
-    // RESET ARENA
-    // =========================================================
+    else if(finalRoll <= 4) {
 
-    function resetArena() {
+        icon = "⚠️";
+        color = "var(--orange)";
 
-        p.curEn = null;
-
-
-        document
-            .getElementById(
-                'event-display'
-            )
-            .innerHTML = `
-
-                <div class="card">
-
-                    <span class="m-icon">
-                        🚪
-                    </span>
-
-                    <h2>
-                        Level ${p.lvl} Door
-                    </h2>
-
-                    <p style="color:#666">
-                        What awaits beyond?
-                    </p>
-
-                </div>
-
-            `;
+        title = "BARELY ESCAPED";
 
 
-        showControls(
-            'group-door'
+        if(p.inv.length > 0) {
+
+            const lostIndex =
+                Math.floor(
+                    Math.random() *
+                    p.inv.length
+                );
+
+
+            const lostItem =
+                p.inv.splice(
+                    lostIndex,
+                    1
+                )[0];
+
+
+            message =
+                `You rolled ${naturalRoll}` +
+                (
+                    p.race === 'Elf'
+                    ? ` (+2 = ${finalRoll})`
+                    : ``
+                ) +
+                `. You escaped, but lost ${lostItem.e}${lostItem.n}.`;
+
+
+            log(
+                `⚠️ Escaped, but lost ${lostItem.n}.`,
+                "var(--orange)"
+            );
+
+        }
+
+        else {
+
+            message =
+                `You rolled ${naturalRoll}` +
+                (
+                    p.race === 'Elf'
+                    ? ` (+2 = ${finalRoll})`
+                    : ``
+                ) +
+                `. You escaped with no inventory to lose.`;
+
+            log(
+                `⚠️ Escaped. No inventory was available to lose.`,
+                "var(--orange)"
+            );
+
+        }
+
+    }
+
+
+    else {
+
+        icon = "🏃";
+        color = "var(--green)";
+
+        title = "SAFE ESCAPE";
+
+
+        const levelLoss =
+            isBoss
+            ? 2
+            : 1;
+
+
+        p.lvl -= levelLoss;
+
+
+        message =
+            `You rolled ${naturalRoll}` +
+            (
+                p.race === 'Elf'
+                ? ` (+2 = ${finalRoll})`
+                : ``
+            ) +
+            `. Safe escape! You lost ${levelLoss} level${
+                levelLoss > 1 ? 's' : ''
+            }.`;
+
+        log(
+            `✅ Safe escape! Roll ${finalRoll}. -${levelLoss} Level(s).`,
+            "var(--green)"
         );
 
+    }
+
+
+    /*
+        Make sure player cannot
+        remain at level 0.
+    */
+
+    if(p.lvl <= 0) {
 
         updateUI();
 
+        triggerDeath(
+            "You lost too many levels while escaping."
+        );
+
+        return;
+
     }
 
 
-    // =========================================================
-    // LOG
-    // =========================================================
-
-    function log(m, c) {
-
-        const d =
-            document.createElement(
-                'div'
-            );
+    p.skillActive = false;
+    p.skillUsed = false;
 
 
-        d.className =
-            'log-entry';
+    sfx.success();
 
 
-        d.style.color =
-            c;
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card result"
+             style="border-color:${color};">
+
+            <span class="m-icon">
+                ${icon}
+            </span>
+
+            <h2 style="color:${color};">
+                ${title}
+            </h2>
+
+            <div class="dice-result">
+                ${naturalRoll}
+            </div>
+
+            ${
+                p.race === 'Elf'
+                ? `
+                    <div style="
+                        color:var(--blue);
+                        font-weight:bold;
+                    ">
+                        Elf Bonus: +2
+                        → Final Roll: ${finalRoll}
+                    </div>
+                `
+                : `
+                    <div style="color:#777;">
+                        Final Roll: ${finalRoll}
+                    </div>
+                `
+            }
+
+            <p>
+                ${message}
+            </p>
+
+        </div>
+
+    `;
 
 
-        d.innerText =
-            `> ${m}`;
+    updateUI();
 
 
-        const l =
+    /*
+        User must explicitly press
+        CONTINUE after seeing result.
+    */
+
+    showControls(
+        'group-next'
+    );
+
+}
+
+
+/* =========================================================
+   TRAPS
+========================================================= */
+
+function spawnTrap() {
+
+    sfx.trap();
+
+
+    const t =
+        Math.floor(
+            Math.random() * 3
+        );
+
+
+    let msg = "";
+    let vis = "";
+
+
+    if(t === 0) {
+
+        p.lvl -= 1;
+
+        msg =
+            "🏹 Arrow Trap! Level -1";
+
+        vis = "🏹";
+
+    }
+
+
+    else if(t === 1) {
+
+        p.lvl = 1;
+
+        msg =
+            "🌀 Void Portal! Returned to Level 1";
+
+        vis = "🌀";
+
+    }
+
+
+    else {
+
+        if(p.inv.length > 0) {
+
+            const index =
+                Math.floor(
+                    Math.random() *
+                    p.inv.length
+                );
+
+            const lost =
+                p.inv.splice(
+                    index,
+                    1
+                )[0];
+
+            msg =
+                `👤 Shadow Thief! ${lost.n} was stolen.`;
+
+        }
+
+        else {
+
+            msg =
+                "👤 Shadow Thief! But your inventory was empty.";
+
+        }
+
+        vis = "👤";
+
+    }
+
+
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card trap">
+
+            <span class="m-icon">
+                ${vis}
+            </span>
+
+            <h2>
+                ${msg}
+            </h2>
+
+        </div>
+
+    `;
+
+
+    log(
+        `⚠️ ${msg}`,
+        "var(--orange)"
+    );
+
+
+    if(p.lvl <= 0) {
+
+        triggerDeath(
+            "You died because of a trap."
+        );
+
+        return;
+    }
+
+
+    endTurn();
+
+}
+
+
+/* =========================================================
+   LOOT
+========================================================= */
+
+function spawnLoot() {
+
+    sfx.loot();
+
+
+    const itemData =
+        ITEMS_BASE[
+            Math.floor(
+                Math.random() *
+                ITEMS_BASE.length
+            )
+        ];
+
+
+    const newItem = {
+
+        ...itemData,
+
+        p:
+            itemData.p +
+            Math.floor(
+                Math.random() * 4
+            ) +
+            1
+
+    };
+
+
+    /*
+        Auto stacking.
+    */
+
+    const idx =
+        p.inv.findIndex(
+            i =>
+                i.id === newItem.id
+        );
+
+
+    if(idx !== -1) {
+
+        p.inv[idx].p +=
+            newItem.p;
+
+
+        log(
+            `✨ Stacked ${newItem.n} +${newItem.p}!`,
+            "var(--gold)"
+        );
+
+
+        document.getElementById(
+            'event-display'
+        ).innerHTML = `
+
+            <div class="card loot">
+
+                <span class="m-icon">
+                    🔨
+                </span>
+
+                <h2>
+                    STACKED!
+                </h2>
+
+                <p>
+                    ${newItem.e}
+                    ${newItem.n}
+                    +${newItem.p}
+                </p>
+
+            </div>
+
+        `;
+
+
+        endTurn();
+
+        return;
+
+    }
+
+
+    /*
+        Inventory full.
+    */
+
+    if(p.inv.length >= 5) {
+
+        p.pendingItem =
+            newItem;
+
+
+        document.getElementById(
+            'new-item-name'
+        ).innerText =
+            `${newItem.e}${newItem.n} (+${newItem.p})`;
+
+
+        const list =
             document.getElementById(
-                'game-log'
+                'swap-list'
             );
 
 
-        l.appendChild(d);
+        list.innerHTML =
+            p.inv.map(
+                (it,idx) => `
+
+                    <div
+                        class="inv-slot selectable"
+                        onclick="confirmSwap(${idx})"
+                    >
+
+                        <span>
+                            ${it.e}
+                            ${it.n}
+                            (+${it.p})
+                        </span>
+
+                        <span>
+                            🔄
+                        </span>
+
+                    </div>
+
+                `
+            ).join('');
 
 
-        l.scrollTop =
-            l.scrollHeight;
+        document.getElementById(
+            'swap-screen'
+        ).style.display = 'flex';
+
+
+        return;
 
     }
 
 
-    // =========================================================
-    // DEATH
-    // =========================================================
+    /*
+        Normal loot.
+    */
 
-    function triggerDeath(reason) {
-
-        sfx.death();
-
-
-        document
-            .getElementById(
-                'death-screen'
-            )
-            .style.display = 'flex';
+    p.inv.push(
+        newItem
+    );
 
 
-        document
-            .getElementById(
-                'death-reason'
-            )
-            .innerText =
-                reason;
+    log(
+        `🎁 Found ${newItem.n} (+${newItem.p})!`,
+        "var(--gold)"
+    );
+
+
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card loot">
+
+            <span class="m-icon">
+                🎁
+            </span>
+
+            <h2>
+                LOOT FOUND!
+            </h2>
+
+            <p>
+                ${newItem.e}
+                ${newItem.n}
+                +${newItem.p}
+            </p>
+
+        </div>
+
+    `;
+
+
+    endTurn();
+
+}
+
+
+/* =========================================================
+   INVENTORY SWAP
+========================================================= */
+
+function confirmSwap(idx) {
+
+    p.inv[idx] =
+        p.pendingItem;
+
+    log(
+        `🔄 Replaced an item with ${p.pendingItem.n}.`,
+        "var(--gold)"
+    );
+
+
+    p.pendingItem = null;
+
+
+    document.getElementById(
+        'swap-screen'
+    ).style.display = 'none';
+
+
+    endTurn();
+
+}
+
+
+function cancelSwap() {
+
+    if(p.pendingItem) {
+
+        log(
+            `🗑️ Discarded ${p.pendingItem.n}.`,
+            "#888"
+        );
 
     }
+
+
+    p.pendingItem = null;
+
+
+    document.getElementById(
+        'swap-screen'
+    ).style.display = 'none';
+
+
+    endTurn();
+
+}
+
+
+/* =========================================================
+   ATTACK CALCULATION
+========================================================= */
+
+function calculateAtk() {
+
+    let items =
+        p.inv.reduce(
+            (sum,item) =>
+                sum + item.p,
+            0
+        );
+
+
+    /*
+        Dwarf passive:
+        +2 ATK per inventory item.
+    */
+
+    if(p.race === 'Dwarf') {
+
+        items +=
+            p.inv.length * 2;
+
+    }
+
+
+    let total =
+        p.lvl +
+        p.baseAtk +
+        items;
+
+
+    /*
+        Orc:
+        double total ATK.
+    */
+
+    if(
+        p.skillActive &&
+        p.race === 'Orc'
+    ) {
+
+        total *= 2;
+
+    }
+
+
+    /*
+        Dwarf:
+        +5 per item while skill is active.
+    */
+
+    if(
+        p.skillActive &&
+        p.race === 'Dwarf'
+    ) {
+
+        total +=
+            p.inv.length * 5;
+
+    }
+
+
+    return total;
+
+}
+
+
+/* =========================================================
+   SKILL
+========================================================= */
+
+function useSkill() {
+
+    if(p.skillUsed)
+        return;
+
+
+    /*
+        Elf doesn't have an active
+        combat skill yet.
+
+        Their racial ability is
+        always active.
+    */
+
+    if(p.race === 'Elf') {
+
+        log(
+            "✨ Elven Agility is always active. Your Run rolls receive +2.",
+            "var(--blue)"
+        );
+
+        return;
+
+    }
+
+
+    p.skillActive = true;
+    p.skillUsed = true;
+
+
+    if(p.race === 'Orc') {
+
+        log(
+            "🔥 BERSERK ACTIVATED! Your next attack deals DOUBLE ATK.",
+            "var(--purple)"
+        );
+
+    }
+
+
+    else if(p.race === 'Dwarf') {
+
+        log(
+            `🔨 OVERLOAD ACTIVATED! +5 ATK per inventory item for your next attack.`,
+            "var(--purple)"
+        );
+
+    }
+
+
+    updateUI();
+
+
+    /*
+        Re-render enemy card so the
+        player can see the boosted power.
+    */
+
+    if(p.curEn)
+        renderEnemyCard(
+            p.curEn.boss
+        );
+
+}
+
+
+/* =========================================================
+   TURN MANAGEMENT
+========================================================= */
+
+function endTurn() {
+
+    /*
+        Skill state is reset after
+        an action has finished.
+    */
+
+    p.skillActive = false;
+    p.skillUsed = false;
+
+
+    updateUI();
+
+
+    showControls(
+        'group-next'
+    );
+
+}
+
+
+function resetArena() {
+
+    document.getElementById(
+        'event-display'
+    ).innerHTML = `
+
+        <div class="card">
+
+            <span class="m-icon">
+                🚪
+            </span>
+
+            <h2>
+                Level ${p.lvl} Door
+            </h2>
+
+            <p style="color:#666;">
+                Open the door to continue.
+            </p>
+
+        </div>
+
+    `;
+
+
+    p.curEn = null;
+
+
+    showControls(
+        'group-door'
+    );
+
+}
+
+
+/* =========================================================
+   LOG
+========================================================= */
+
+function log(message,color) {
+
+    const d =
+        document.createElement(
+            'div'
+        );
+
+
+    d.className =
+        'log-entry';
+
+
+    d.style.color =
+        color;
+
+
+    d.innerText =
+        `> ${message}`;
+
+
+    const l =
+        document.getElementById(
+            'game-log'
+        );
+
+
+    l.appendChild(d);
+
+
+    l.scrollTop =
+        l.scrollHeight;
+
+}
+
+
+/* =========================================================
+   DEATH
+========================================================= */
+
+function triggerDeath(reason) {
+
+    sfx.death();
+
+
+    document.getElementById(
+        'death-screen'
+    ).style.display =
+        'flex';
+
+
+    document.getElementById(
+        'death-reason'
+    ).innerText =
+        reason;
+
+
+    document.querySelectorAll(
+        '.control-group'
+    ).forEach(
+        e =>
+            e.style.display =
+            'none'
+    );
+
+}
+
+
+/* =========================================================
+   OPTIONAL BGM
+========================================================= */
+
+function startBGM() {
+
+    const notes = [
+        261.63,
+        329.63,
+        392.00,
+        329.63
+    ];
+
+
+    let i = 0;
+
+
+    setInterval(
+        () => {
+
+            playNote(
+                notes[
+                    i % notes.length
+                ] / 2,
+                'triangle',
+                .5,
+                .015
+            );
+
+            i++;
+
+        },
+        600
+    );
+
+}
 
 </script>
 
