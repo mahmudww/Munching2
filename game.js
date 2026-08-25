@@ -1,46 +1,595 @@
 /* =========================================================
    MUNCHING 2
-   GAME.JS
-========================================================= */
+   game.js
+   Main Game State + UI Controller
+   ========================================================= */
 
 
 /* =========================================================
-   PLAYER STATE
-========================================================= */
+   GAME STATE
+   ========================================================= */
 
-let p = {
+const game = {
+    race: null,
 
-    race: "",
-
-    lvl: 1,
+    level: 1,
 
     baseAtk: 0,
 
-    inv: [],
+    inventory: [],
+
+    currentEnemy: null,
+
+    currentEvent: null,
+
+    pendingItem: null,
 
     skillUsed: false,
 
     skillActive: false,
 
-    curEn: null,
+    gameOver: false,
 
-    pendingItem: null,
+    victory: false,
 
-    gameOver: false
-
+    turnLocked: false
 };
 
 
 /* =========================================================
-   GAME SETTINGS
-========================================================= */
+   GAME CONFIG
+   ========================================================= */
 
-const MIN_LEVEL = 1;
+const GAME_CONFIG = {
+
+    maxInventory: 5,
+
+    startingLevel: 1,
+
+    maxLevel: 10,
+
+    run: {
+        normalSuccessPenalty: 1,
+        bossSuccessPenalty: 2,
+        failurePenalty: 3
+    },
+
+    races: {
+
+        Orc: {
+            baseAtk: 5,
+
+            icon: "👹",
+
+            color: "var(--red)",
+
+            skillName: "Berserk",
+
+            skillDescription: "Double total attack for one attack."
+        },
+
+        Elf: {
+            baseAtk: 2,
+
+            icon: "🧝",
+
+            color: "var(--blue)",
+
+            skillName: "Swift Step",
+
+            skillDescription: "Gain +1 to escape rolls."
+        },
+
+        Dwarf: {
+            baseAtk: 2,
+
+            icon: "🧔",
+
+            color: "var(--gold)",
+
+            skillName: "Forge Master",
+
+            skillDescription: "Items provide additional attack."
+        }
+    }
+};
 
 
 /* =========================================================
-   CONTROL GROUPS
-========================================================= */
+   DOM HELPERS
+   ========================================================= */
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+
+function setText(id, value) {
+
+    const element = $(id);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+
+function show(id) {
+
+    const element = $(id);
+
+    if (element) {
+        element.style.display = "flex";
+    }
+}
+
+
+function hide(id) {
+
+    const element = $(id);
+
+    if (element) {
+        element.style.display = "none";
+    }
+}
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+function initGame(race) {
+
+    if (!GAME_CONFIG.races[race]) {
+        console.error("Unknown race:", race);
+        return;
+    }
+
+    const raceData = GAME_CONFIG.races[race];
+
+    game.race = race;
+
+    game.level = GAME_CONFIG.startingLevel;
+
+    game.baseAtk = raceData.baseAtk;
+
+    game.inventory = [];
+
+    game.currentEnemy = null;
+
+    game.currentEvent = null;
+
+    game.pendingItem = null;
+
+    game.skillUsed = false;
+
+    game.skillActive = false;
+
+    game.gameOver = false;
+
+    game.victory = false;
+
+    game.turnLocked = false;
+
+
+    /* Resume audio after user interaction */
+
+    if (
+        typeof audioCtx !== "undefined" &&
+        audioCtx.state === "suspended"
+    ) {
+        audioCtx.resume();
+    }
+
+
+    if (typeof startBGM === "function") {
+        startBGM();
+    }
+
+
+    /* Hide start screen */
+
+    hide("overlay");
+
+
+    /* Update UI */
+
+    updateUI();
+
+    updateSkillButton();
+
+    updateArenaLevel();
+
+    updateMobileHUD();
+
+
+    /* Show first door */
+
+    resetArena();
+
+
+    /* Log */
+
+    log(
+        `⚔️ ${race} begins the adventure!`,
+        raceData.color
+    );
+
+    log(
+        `🚪 You are standing before Level ${game.level}.`,
+        "#aaa"
+    );
+}
+
+
+/* =========================================================
+   UI UPDATE
+   ========================================================= */
+
+function updateUI() {
+
+    updatePlayerInfo();
+
+    updateStats();
+
+    updateInventory();
+
+    updateSkillButton();
+
+    updateArenaLevel();
+
+    updateMobileHUD();
+}
+
+
+/* =========================================================
+   PLAYER INFO
+   ========================================================= */
+
+function updatePlayerInfo() {
+
+    if (!game.race) {
+        return;
+    }
+
+    const raceData = GAME_CONFIG.races[game.race];
+
+    setText(
+        "ui-race",
+        game.race.toUpperCase()
+    );
+
+    const avatar = $("player-avatar");
+
+    if (avatar) {
+        avatar.textContent = raceData.icon;
+    }
+}
+
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+function updateStats() {
+
+    const attack = calculateAttack();
+
+    setText(
+        "ui-level",
+        game.level
+    );
+
+    setText(
+        "ui-atk",
+        attack
+    );
+}
+
+
+/* =========================================================
+   MOBILE HUD
+   ========================================================= */
+
+function updateMobileHUD() {
+
+    setText(
+        "mobile-level",
+        game.level
+    );
+
+    setText(
+        "mobile-atk",
+        calculateAttack()
+    );
+
+    setText(
+        "mobile-inventory",
+        `${game.inventory.length}/${GAME_CONFIG.maxInventory}`
+    );
+}
+
+
+/* =========================================================
+   ARENA LEVEL
+   ========================================================= */
+
+function updateArenaLevel() {
+
+    const element = $("arena-level");
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent =
+        `LEVEL ${game.level}`;
+}
+
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+
+function updateInventory() {
+
+    const containers = [
+        $("ui-inv"),
+        $("inventory-container")
+    ];
+
+    const countElement = $("inventory-count");
+
+    if (countElement) {
+
+        countElement.textContent =
+            `${game.inventory.length}/${GAME_CONFIG.maxInventory}`;
+    }
+
+
+    containers.forEach(container => {
+
+        if (!container) {
+            return;
+        }
+
+
+        if (game.inventory.length === 0) {
+
+            container.innerHTML = `
+                <div class="inv-empty">
+                    Empty
+                </div>
+            `;
+
+            return;
+        }
+
+
+        container.innerHTML =
+            game.inventory
+                .map((item, index) => {
+
+                    return `
+                        <div
+                            class="inv-slot"
+                            data-index="${index}"
+                        >
+                            <span>
+                                ${item.e}
+                                ${item.n}
+                            </span>
+
+                            <span>
+                                +${item.p}
+                            </span>
+                        </div>
+                    `;
+                })
+                .join("");
+    });
+}
+
+
+/* =========================================================
+   ATTACK CALCULATION
+   ========================================================= */
+
+function calculateAttack() {
+
+    let total =
+        game.level +
+        game.baseAtk;
+
+
+    /*
+     * Every inventory item contributes
+     * its power.
+     */
+
+    game.inventory.forEach(item => {
+
+        let itemPower = item.p;
+
+
+        /*
+         * Dwarf passive:
+         * additional +1 attack per item.
+         */
+
+        if (game.race === "Dwarf") {
+            itemPower += 1;
+        }
+
+
+        total += itemPower;
+    });
+
+
+    /*
+     * Active skills.
+     */
+
+    if (game.skillActive) {
+
+        /*
+         * Orc:
+         * DOUBLE TOTAL ATTACK.
+         */
+
+        if (game.race === "Orc") {
+
+            total *= 2;
+        }
+
+
+        /*
+         * Dwarf:
+         * additional bonus based on
+         * inventory size.
+         */
+
+        else if (game.race === "Dwarf") {
+
+            total +=
+                game.inventory.length * 3;
+        }
+    }
+
+
+    return Math.floor(total);
+}
+
+
+/* =========================================================
+   SKILL
+   ========================================================= */
+
+function useSkill() {
+
+    if (game.gameOver || game.victory) {
+        return;
+    }
+
+    if (game.turnLocked) {
+        return;
+    }
+
+    if (game.skillUsed) {
+
+        log(
+            "⚠️ Skill has already been used this turn.",
+            "#888"
+        );
+
+        return;
+    }
+
+
+    game.skillUsed = true;
+
+    game.skillActive = true;
+
+
+    const raceData =
+        GAME_CONFIG.races[game.race];
+
+
+    log(
+        `🔥 ${raceData.skillName} activated!`,
+        "var(--purple)"
+    );
+
+
+    if (game.race === "Orc") {
+
+        log(
+            `💥 Attack doubled: ${calculateAttack()} ATK`,
+            "var(--bright-green)"
+        );
+    }
+
+
+    else if (game.race === "Elf") {
+
+        log(
+            "👟 Escape rolls gain +1 this turn.",
+            "var(--blue)"
+        );
+    }
+
+
+    else if (game.race === "Dwarf") {
+
+        log(
+            `🔨 Item bonus activated: +${game.inventory.length * 3} ATK`,
+            "var(--gold)"
+        );
+    }
+
+
+    updateUI();
+}
+
+
+/* =========================================================
+   SKILL BUTTON
+   ========================================================= */
+
+function updateSkillButton() {
+
+    const button = $("skill-btn");
+
+    if (!button) {
+        return;
+    }
+
+
+    if (!game.race) {
+
+        button.disabled = true;
+
+        return;
+    }
+
+
+    const raceData =
+        GAME_CONFIG.races[game.race];
+
+
+    button.textContent =
+        `🔥 ${raceData.skillName.toUpperCase()}`;
+
+
+    button.title =
+        raceData.skillDescription;
+
+
+    button.disabled =
+        game.skillUsed ||
+        game.turnLocked ||
+        game.gameOver ||
+        game.victory;
+
+
+    if (game.skillUsed) {
+
+        button.style.opacity = "0.45";
+
+        button.style.cursor = "not-allowed";
+
+    } else {
+
+        button.style.opacity = "1";
+
+        button.style.cursor = "pointer";
+    }
+}
+
+
+/* =========================================================
+   CONTROL GROUP
+   ========================================================= */
 
 function showControls(groupId) {
 
@@ -49,205 +598,113 @@ function showControls(groupId) {
         .forEach(element => {
 
             element.style.display = "none";
-
         });
 
 
-    const group =
-        document.getElementById(groupId);
+    const target =
+        $(groupId);
 
-
-    if (group) {
-
-        group.style.display = "grid";
-
+    if (!target) {
+        return;
     }
 
+
+    target.style.display = "grid";
 }
 
 
 /* =========================================================
-   INITIALIZE GAME
-========================================================= */
+   DOOR
+   ========================================================= */
 
-function initGame(race) {
+function openDoor() {
 
-    /*
-     * Resume browser audio after user interaction.
-     */
+    if (game.gameOver || game.victory) {
+        return;
+    }
 
-    if (
-        typeof resumeAudio === "function"
-    ) {
-
-        resumeAudio();
-
+    if (game.turnLocked) {
+        return;
     }
 
 
-    if (
-        typeof startBGM === "function"
-    ) {
+    game.turnLocked = true;
 
-        startBGM();
+    game.currentEnemy = null;
 
-    }
+    game.currentEvent = null;
 
-
-    /*
-     * Reset player state.
-     */
-
-    p.race = race;
-
-    p.lvl = 1;
-
-    p.inv = [];
-
-    p.skillUsed = false;
-
-    p.skillActive = false;
-
-    p.curEn = null;
-
-    p.pendingItem = null;
-
-    p.gameOver = false;
-
-
-    /*
-     * Race base attack.
-     */
-
-    if (race === "Orc") {
-
-        p.baseAtk = 5;
-
-    }
-
-    else if (race === "Elf") {
-
-        p.baseAtk = 2;
-
-    }
-
-    else if (race === "Dwarf") {
-
-        p.baseAtk = 2;
-
-    }
-
-    else {
-
-        p.baseAtk = 0;
-
-    }
-
-
-    /*
-     * Hide start screen.
-     */
-
-    const overlay =
-        document.getElementById("overlay");
-
-
-    if (overlay) {
-
-        overlay.style.display = "none";
-
-    }
-
-
-    /*
-     * Update race UI.
-     */
-
-    const raceUI =
-        document.getElementById("ui-race");
-
-
-    if (raceUI) {
-
-        raceUI.innerText =
-            race.toUpperCase();
-
-    }
-
-
-    /*
-     * Update passive description.
-     */
-
-    updatePassiveUI();
-
-
-    /*
-     * Update everything.
-     */
 
     updateUI();
 
 
     /*
-     * Start at the first door.
+     * Boss levels
      */
 
-    resetArena();
+    if (game.level === 3) {
 
+        if (typeof spawnBoss === "function") {
 
-    log(
-        `🚪 Your adventure begins as an ${race}!`,
-        "white"
-    );
+            spawnBoss(
+                "Kargath the Gatekeeper",
+                20,
+                "👹"
+            );
+        }
 
-}
-
-
-/* =========================================================
-   OPEN DOOR
-========================================================= */
-
-function openDoor() {
-
-    if (p.gameOver) {
         return;
     }
 
 
-    /*
-     * Boss levels.
-     *
-     * Level 3
-     * Level 6
-     * Level 10
-     */
+    if (game.level === 6) {
 
-    if (
-        typeof isBossLevel === "function" &&
-        isBossLevel(p.lvl)
-    ) {
+        const boss =
+            Math.random() > 0.5
 
-        if (
-            typeof spawnBossForCurrentLevel ===
-            "function"
-        ) {
+                ? {
+                    n: "Xenomorph Queen",
+                    p: 40,
+                    i: "👽"
+                }
 
-            spawnBossForCurrentLevel();
+                : {
+                    n: "Void Reaver",
+                    p: 45,
+                    i: "👻"
+                };
 
+
+        if (typeof spawnBoss === "function") {
+
+            spawnBoss(
+                boss.n,
+                boss.p,
+                boss.i
+            );
         }
 
         return;
+    }
 
+
+    if (game.level === 10) {
+
+        if (typeof spawnBoss === "function") {
+
+            spawnBoss(
+                "LORD MUNCHING",
+                85,
+                "🐲"
+            );
+        }
+
+        return;
     }
 
 
     /*
      * Normal random event.
-     *
-     * 45% Monster
-     * 25% Trap
-     * 30% Loot
      */
 
     const rng =
@@ -256,1269 +713,270 @@ function openDoor() {
 
     if (rng < 0.45) {
 
-        if (
-            typeof spawnMonster ===
-            "function"
-        ) {
-
+        if (typeof spawnMonster === "function") {
             spawnMonster();
-
         }
 
-    }
+    } else if (rng < 0.70) {
 
-    else if (rng < 0.70) {
+        if (typeof spawnTrap === "function") {
+            spawnTrap();
+        }
 
-        spawnTrap();
+    } else {
 
-    }
-
-    else {
-
-        if (
-            typeof spawnLoot ===
-            "function"
-        ) {
-
+        if (typeof spawnLoot === "function") {
             spawnLoot();
-
         }
-
     }
-
 }
 
 
 /* =========================================================
-   TRAP EVENT
-========================================================= */
+   SET CURRENT EVENT
+   ========================================================= */
 
-function spawnTrap() {
+function setCurrentEnemy(enemy) {
 
-    if (p.gameOver) {
-        return;
-    }
+    game.currentEnemy = enemy;
 
+    game.currentEvent = "combat";
+}
 
-    if (
-        typeof sfx !== "undefined" &&
-        typeof sfx.trap === "function"
-    ) {
 
-        sfx.trap();
+function setCurrentEvent(type) {
 
-    }
+    game.currentEvent = type;
+}
 
 
-    const trapType =
-        Math.floor(
-            Math.random() * 3
-        );
+/* =========================================================
+   COMBAT STATE
+   ========================================================= */
 
+function beginCombat(enemy) {
 
-    let message = "";
+    setCurrentEnemy(enemy);
 
-    let icon = "";
+    game.turnLocked = false;
 
-    let levelChange = 0;
+    game.skillUsed = false;
 
-
-    /*
-     * =====================================================
-     * ARROW TRAP
-     * =====================================================
-     */
-
-    if (trapType === 0) {
-
-        p.lvl -= 1;
-
-        levelChange = -1;
-
-        message =
-            "🏹 Arrow Trap! Level -1";
-
-        icon = "🏹";
-
-    }
-
-
-    /*
-     * =====================================================
-     * VOID PORTAL
-     * =====================================================
-     */
-
-    else if (trapType === 1) {
-
-        p.lvl = 1;
-
-        message =
-            "🌀 Void Portal! Returned to Level 1";
-
-        icon = "🌀";
-
-    }
-
-
-    /*
-     * =====================================================
-     * SHADOW THIEF
-     * =====================================================
-     */
-
-    else {
-
-        icon = "👤";
-
-
-        if (
-            typeof loseRandomItem ===
-            "function"
-        ) {
-
-            const lost =
-                loseRandomItem();
-
-
-            if (lost) {
-
-                message =
-                    `👤 Shadow Thief! Lost ${getItemName(lost)}`;
-
-            }
-
-            else {
-
-                message =
-                    "👤 Shadow Thief! Your inventory was empty.";
-
-            }
-
-        }
-
-        else {
-
-            message =
-                "👤 Shadow Thief! Item stolen.";
-
-        }
-
-    }
-
-
-    /*
-     * Display trap.
-     */
-
-    document.getElementById(
-        "event-display"
-    ).innerHTML = `
-
-        <div class="card trap">
-
-            <span class="m-icon">
-                ${icon}
-            </span>
-
-            <h2>
-                ${message}
-            </h2>
-
-        </div>
-
-    `;
-
-
-    log(
-        `⚠️ ${message}`,
-        "var(--purple)"
-    );
-
-
-    /*
-     * Check death.
-     */
-
-    if (
-        p.lvl <= 0
-    ) {
-
-        triggerDeath(
-            "You died because your level reached 0."
-        );
-
-        return;
-
-    }
-
-
-    /*
-     * Clamp level.
-     */
-
-    p.lvl =
-        Math.max(
-            MIN_LEVEL,
-            p.lvl
-        );
-
+    game.skillActive = false;
 
     updateUI();
 
-    endTurn();
+    showControls("group-combat");
 
-}
-
-
-/* =========================================================
-   RUN / ESCAPE
-========================================================= */
-
-function handleRun() {
-
-    if (
-        p.gameOver ||
-        !p.curEn
-    ) {
-
-        return;
-
-    }
-
-
-    /*
-     * Prevent multiple clicks.
-     */
-
-    showControls("group-next");
-
-
-    /*
-     * Disable all combat buttons
-     * during dice animation.
-     */
-
-    document
-        .querySelectorAll(
-            "#group-combat button"
-        )
-        .forEach(button => {
-
-            button.disabled = true;
-
-        });
-
-
-    /*
-     * Show dice animation.
-     */
-
-    document.getElementById(
-        "event-display"
-    ).innerHTML = `
-
-        <div class="card">
-
-            <div class="dice-roll">
-                🎲
-            </div>
-
-            <p>
-                ROLLING...
-            </p>
-
-        </div>
-
-    `;
-
-
-    let rolls = 0;
-
-
-    const rollAnimation =
-        setInterval(() => {
-
-            if (
-                typeof sfx !== "undefined" &&
-                typeof sfx.run === "function"
-            ) {
-
-                sfx.run();
-
-            }
-
-
-            rolls++;
-
-
-            if (rolls >= 6) {
-
-                clearInterval(
-                    rollAnimation
-                );
-
-            }
-
-        }, 100);
-
-
-    /*
-     * Wait for animation.
-     */
-
-    setTimeout(() => {
-
-        /*
-         * Raw dice roll.
-         */
-
-        const rawRoll =
-            Math.floor(
-                Math.random() * 6
-            ) + 1;
-
-
-        /*
-         * Elf gets +1 escape bonus.
-         */
-
-        const bonus =
-            p.race === "Elf"
-                ? 1
-                : 0;
-
-
-        const finalRoll =
-            rawRoll + bonus;
-
-
-        /*
-         * Boss or normal enemy?
-         */
-
-        const escapedBoss =
-            p.curEn &&
-            p.curEn.boss === true;
-
-
-        const enemyName =
-            typeof getCurrentEnemyName ===
-            "function"
-
-                ? getCurrentEnemyName()
-
-                : (
-                    p.curEn.name ||
-                    p.curEn.n ||
-                    "Enemy"
-                );
-
-
-        /*
-         * Log exact roll.
-         */
-
-        if (bonus > 0) {
-
-            log(
-                `🎲 Roll: ${rawRoll} + 1 Elf bonus = ${finalRoll}`,
-                "var(--gold)"
-            );
-
-        }
-
-        else {
-
-            log(
-                `🎲 Roll: ${rawRoll}`,
-                "var(--gold)"
-            );
-
-        }
-
-
-        /*
-         * =================================================
-         * ROLL 1-2
-         *
-         * FAILURE
-         *
-         * Level -3
-         * Lose ALL inventory
-         * =================================================
-         */
-
-        if (rawRoll <= 2) {
-
-            if (
-                typeof sfx !== "undefined" &&
-                typeof sfx.escapeFail ===
-                "function"
-            ) {
-
-                sfx.escapeFail();
-
-            }
-
-
-            p.lvl -= 3;
-
-
-            if (
-                typeof loseAllItems ===
-                "function"
-            ) {
-
-                loseAllItems();
-
-            }
-
-            else {
-
-                p.inv = [];
-
-            }
-
-
-            log(
-                `❌ Failed to escape ${enemyName}! Level -3 and all items lost.`,
-                "var(--red)"
-            );
-
-
-            document.getElementById(
-                "event-display"
-            ).innerHTML = `
-
-                <div class="card monster">
-
-                    <span class="m-icon">
-                        💥
-                    </span>
-
-                    <h2>
-                        ESCAPE FAILED!
-                    </h2>
-
-                    <p>
-                        Roll: ${rawRoll}
-                    </p>
-
-                    <p style="color: var(--red);">
-                        Level -3
-                    </p>
-
-                    <p style="color: var(--red);">
-                        All inventory lost
-                    </p>
-
-                </div>
-
-            `;
-
-
-            /*
-             * Death check.
-             */
-
-            if (
-                p.lvl <= 0
-            ) {
-
-                triggerDeath(
-                    `You were overwhelmed by ${enemyName} while trying to escape.`
-                );
-
-                return;
-
-            }
-
-
-            p.lvl =
-                Math.max(
-                    MIN_LEVEL,
-                    p.lvl
-                );
-
-
-            p.curEn =
-                null;
-
-
-            updateUI();
-
-
-            setTimeout(() => {
-
-                resetArena();
-
-            }, 1200);
-
-
-            return;
-
-        }
-
-
-        /*
-         * =================================================
-         * ROLL 3-4
-         *
-         * SUCCESS
-         *
-         * Lose 1 random item
-         *
-         * Normal mob: Level -1
-         * Boss: Level -2
-         * =================================================
-         */
-
-        if (rawRoll <= 4) {
-
-            if (
-                typeof sfx !== "undefined" &&
-                typeof sfx.escapeSuccess ===
-                "function"
-            ) {
-
-                sfx.escapeSuccess();
-
-            }
-
-
-            const levelPenalty =
-                escapedBoss
-                    ? 2
-                    : 1;
-
-
-            p.lvl -=
-                levelPenalty;
-
-
-            let lostItem =
-                null;
-
-
-            if (
-                typeof loseRandomItem ===
-                "function"
-            ) {
-
-                lostItem =
-                    loseRandomItem();
-
-            }
-
-
-            let itemMessage;
-
-
-            if (lostItem) {
-
-                itemMessage =
-                    `${getItemEmoji(lostItem)} ${getItemName(lostItem)} was lost.`;
-
-            }
-
-            else {
-
-                itemMessage =
-                    "No item was lost because your inventory was empty.";
-
-            }
-
-
-            log(
-                `👟 Escaped from ${enemyName}! Level -${levelPenalty}. ${itemMessage}`,
-                "var(--green)"
-            );
-
-
-            document.getElementById(
-                "event-display"
-            ).innerHTML = `
-
-                <div class="card loot">
-
-                    <span class="m-icon">
-                        🏃
-                    </span>
-
-                    <h2>
-                        ESCAPED!
-                    </h2>
-
-                    <p>
-                        Roll: ${rawRoll}
-                    </p>
-
-                    <p style="color: var(--green);">
-                        Level -${levelPenalty}
-                    </p>
-
-                    <p>
-                        ${itemMessage}
-                    </p>
-
-                </div>
-
-            `;
-
-
-            /*
-             * Death check.
-             */
-
-            if (
-                p.lvl <= 0
-            ) {
-
-                triggerDeath(
-                    "You collapsed while escaping."
-                );
-
-                return;
-
-            }
-
-
-            p.lvl =
-                Math.max(
-                    MIN_LEVEL,
-                    p.lvl
-                );
-
-
-            p.curEn =
-                null;
-
-
-            updateUI();
-
-
-            setTimeout(() => {
-
-                resetArena();
-
-            }, 1500);
-
-
-            return;
-
-        }
-
-
-        /*
-         * =================================================
-         * ROLL 5-6
-         *
-         * SUCCESS
-         *
-         * No item lost
-         *
-         * Normal mob: Level -1
-         * Boss: Level -2
-         * =================================================
-         */
-
-        if (rawRoll >= 5) {
-
-            if (
-                typeof sfx !== "undefined" &&
-                typeof sfx.escapeSuccess ===
-                "function"
-            ) {
-
-                sfx.escapeSuccess();
-
-            }
-
-
-            const levelPenalty =
-                escapedBoss
-                    ? 2
-                    : 1;
-
-
-            p.lvl -=
-                levelPenalty;
-
-
-            log(
-                `🏃 Successfully escaped ${enemyName}! Level -${levelPenalty}.`,
-                "var(--green)"
-            );
-
-
-            document.getElementById(
-                "event-display"
-            ).innerHTML = `
-
-                <div class="card loot">
-
-                    <span class="m-icon">
-                        🏃
-                    </span>
-
-                    <h2>
-                        ESCAPED SAFELY!
-                    </h2>
-
-                    <p>
-                        Roll: ${rawRoll}
-                    </p>
-
-                    <p style="color: var(--green);">
-                        Level -${levelPenalty}
-                    </p>
-
-                    <p>
-                        Your inventory is safe.
-                    </p>
-
-                </div>
-
-            `;
-
-
-            /*
-             * Death check.
-             */
-
-            if (
-                p.lvl <= 0
-            ) {
-
-                triggerDeath(
-                    "You collapsed while escaping."
-                );
-
-                return;
-
-            }
-
-
-            p.lvl =
-                Math.max(
-                    MIN_LEVEL,
-                    p.lvl
-                );
-
-
-            p.curEn =
-                null;
-
-
-            updateUI();
-
-
-            setTimeout(() => {
-
-                resetArena();
-
-            }, 1500);
-
-
-            return;
-
-        }
-
-
-    }, 900);
-
-}
-
-
-/* =========================================================
-   RESET ARENA
-========================================================= */
-
-function resetArena() {
-
-    if (p.gameOver) {
-        return;
-    }
-
-
-    p.curEn =
-        null;
-
-
-    /*
-     * Reset skill state.
-     */
-
-    p.skillActive =
-        false;
-
-    p.skillUsed =
-        false;
-
-
-    /*
-     * Reset event display.
-     */
-
-    document.getElementById(
-        "event-display"
-    ).innerHTML = `
-
-        <div class="card">
-
-            <span class="m-icon">
-                🚪
-            </span>
-
-            <h2>
-                Level ${p.lvl} Door
-            </h2>
-
-            <p class="event-description">
-                Something awaits beyond the door...
-            </p>
-
-        </div>
-
-    `;
-
-
-    /*
-     * Show door button.
-     */
-
-    showControls(
-        "group-door"
-    );
-
-
-    updateUI();
-
-
-    /*
-     * Re-enable combat buttons.
-     */
-
-    document
-        .querySelectorAll(
-            "#group-combat button"
-        )
-        .forEach(button => {
-
-            button.disabled = false;
-
-        });
-
-
-    /*
-     * Update combat display.
-     */
-
-    updateCombatInfo();
-
+    updateSkillButton();
 }
 
 
 /* =========================================================
    END TURN
-========================================================= */
+   ========================================================= */
 
 function endTurn() {
 
-    if (p.gameOver) {
+    if (game.gameOver || game.victory) {
         return;
     }
 
 
-    /*
-     * Skill lasts only for one turn.
-     */
+    game.skillActive = false;
 
-    p.skillActive =
-        false;
+    game.skillUsed = false;
 
+    game.turnLocked = false;
 
-    p.skillUsed =
-        false;
+    game.currentEnemy = null;
+
+    game.currentEvent = null;
 
 
     updateUI();
 
+    updateSkillButton();
 
-    showControls(
-        "group-next"
-    );
-
-
-    updateCombatInfo();
-
-
-    /*
-     * Re-enable buttons.
-     */
-
-    document
-        .querySelectorAll(
-            "#group-combat button"
-        )
-        .forEach(button => {
-
-            button.disabled = false;
-
-        });
-
+    showControls("group-next");
 }
 
 
 /* =========================================================
-   UPDATE UI
-========================================================= */
+   RESET ARENA
+   ========================================================= */
 
-function updateUI() {
+function resetArena() {
 
-    /*
-     * Level
-     */
-
-    const levelUI =
-        document.getElementById(
-            "ui-level"
-        );
-
-
-    if (levelUI) {
-
-        levelUI.innerText =
-            p.lvl;
-
+    if (game.gameOver || game.victory) {
+        return;
     }
 
 
-    /*
-     * Attack
-     */
+    game.turnLocked = false;
 
-    const atkUI =
-        document.getElementById(
-            "ui-atk"
-        );
+    game.skillUsed = false;
+
+    game.skillActive = false;
+
+    game.currentEnemy = null;
+
+    game.currentEvent = null;
 
 
-    if (
-        atkUI &&
-        typeof calculateAtk ===
-        "function"
-    ) {
+    const display =
+        $("event-display");
 
-        atkUI.innerText =
-            calculateAtk();
 
+    if (display) {
+
+        display.innerHTML = `
+            <div class="card idle-card">
+
+                <span class="m-icon">
+                    🚪
+                </span>
+
+                <h2>
+                    Level ${game.level}
+                </h2>
+
+                <p>
+                    Something awaits behind the door...
+                </p>
+
+            </div>
+        `;
     }
 
 
-    /*
-     * Inventory
-     */
-
-    const inventoryUI =
-        document.getElementById(
-            "ui-inv"
-        );
-
-
-    if (
-        inventoryUI &&
-        typeof p.inv !== "undefined"
-    ) {
-
-        if (
-            p.inv.length === 0
-        ) {
-
-            inventoryUI.innerHTML = `
-
-                <div class="inv-slot empty-slot">
-                    Empty
-                </div>
-
-            `;
-
-        }
-
-        else {
-
-            inventoryUI.innerHTML =
-                p.inv.map(
-                    item => `
-
-                        <div class="inv-slot">
-
-                            <span>
-                                ${getItemEmoji(item)}
-                                ${getItemName(item)}
-                            </span>
-
-                            <span>
-                                +${getItemPower(item)}
-                            </span>
-
-                        </div>
-
-                    `
-                ).join("");
-
-        }
-
-    }
-
-
-    /*
-     * Inventory count
-     */
-
-    const inventoryCount =
-        document.getElementById(
-            "inventory-count"
-        );
-
-
-    if (inventoryCount) {
-
-        const maxInventory =
-            typeof MAX_INVENTORY !==
-            "undefined"
-
-                ? MAX_INVENTORY
-                : 5;
-
-
-        inventoryCount.innerText =
-            `${p.inv.length} / ${maxInventory}`;
-
-    }
-
-
-    /*
-     * Passive
-     */
-
-    updatePassiveUI();
-
-
-    /*
-     * Combat info
-     */
-
-    updateCombatInfo();
-
-
-    /*
-     * Skill button
-     */
+    updateArenaLevel();
 
     updateSkillButton();
 
+    showControls("group-door");
 }
 
 
 /* =========================================================
-   PASSIVE UI
-========================================================= */
+   LEVEL MANAGEMENT
+   ========================================================= */
 
-function updatePassiveUI() {
+function changeLevel(amount) {
 
-    const passiveText =
-        document.getElementById(
-            "passive-text"
-        );
+    game.level += amount;
 
 
-    if (!passiveText) {
-        return;
+    /*
+     * Never allow level below 1
+     * unless death is handled separately.
+     */
+
+    if (game.level < 1) {
+        game.level = 0;
     }
 
 
-    if (p.race === "Orc") {
-
-        passiveText.innerHTML =
-            "🔥 <strong>Berserk</strong><br>" +
-            "Double your total ATK for one turn.";
-
-    }
-
-    else if (p.race === "Elf") {
-
-        passiveText.innerHTML =
-            "👟 <strong>Swift</strong><br>" +
-            "+1 to escape rolls.";
-
-    }
-
-    else if (p.race === "Dwarf") {
-
-        passiveText.innerHTML =
-            "🔨 <strong>Master Crafter</strong><br>" +
-            "Each item gives +1 bonus ATK.";
-
-    }
-
-    else {
-
-        passiveText.innerText =
-            "Choose a race to begin.";
-
-    }
-
+    updateUI();
 }
 
 
 /* =========================================================
-   SKILL BUTTON UI
-========================================================= */
+   DEATH
+   ========================================================= */
 
-function updateSkillButton() {
+function triggerDeath(reason) {
 
-    const button =
-        document.getElementById(
-            "skill-btn"
-        );
-
-
-    if (!button) {
+    if (game.gameOver) {
         return;
     }
 
 
-    if (!p.curEn) {
+    game.gameOver = true;
 
-        button.disabled =
-            true;
+    game.turnLocked = true;
 
-        button.innerText =
-            "🔥 SKILL";
+    game.skillActive = false;
 
-        return;
 
+    if (typeof sfx !== "undefined" &&
+        sfx.death) {
+
+        sfx.death();
     }
 
 
-    if (p.skillUsed) {
+    const reasonElement =
+        $("death-reason");
 
-        button.disabled =
-            true;
 
-        button.innerText =
-            "🔥 SKILL USED";
-
-        return;
-
+    if (reasonElement) {
+        reasonElement.textContent =
+            reason;
     }
 
 
-    button.disabled =
-        false;
+    show("death-screen");
 
-    button.innerText =
-        p.race === "Orc"
 
-            ? "🔥 BERSERK"
+    updateSkillButton();
 
-            : "🔥 SKILL";
 
+    log(
+        `💀 ${reason}`,
+        "var(--red)"
+    );
 }
 
 
 /* =========================================================
-   COMBAT INFO
-========================================================= */
+   VICTORY
+   ========================================================= */
 
-function updateCombatInfo() {
+function triggerVictory() {
 
-    const playerPower =
-        document.getElementById(
-            "combat-player-power"
-        );
-
-
-    const enemyPower =
-        document.getElementById(
-            "combat-enemy-power"
-        );
-
-
-    if (
-        playerPower &&
-        typeof calculateAtk ===
-        "function"
-    ) {
-
-        playerPower.innerText =
-            calculateAtk();
-
+    if (game.victory) {
+        return;
     }
 
 
-    if (enemyPower) {
+    game.victory = true;
 
-        if (
-            p.curEn &&
-            typeof getCurrentEnemyPower ===
-            "function"
-        ) {
+    game.turnLocked = true;
 
-            enemyPower.innerText =
-                getCurrentEnemyPower();
+    game.skillActive = false;
 
-        }
 
-        else if (
-            p.curEn
-        ) {
+    show("win-screen");
 
-            enemyPower.innerText =
-                p.curEn.pwr ||
-                p.curEn.power ||
-                0;
 
-        }
+    updateSkillButton();
 
-        else {
 
-            enemyPower.innerText =
-                "-";
-
-        }
-
-    }
-
+    log(
+        "🏆 LORD MUNCHING HAS FALLEN!",
+        "var(--gold)"
+    );
 }
 
 
 /* =========================================================
-   LOG SYSTEM
-========================================================= */
+   LOG
+   ========================================================= */
 
-function log(
-    message,
-    color = "white"
-) {
+function log(message, color = "#eee") {
 
-    const logPanel =
-        document.getElementById(
-            "game-log"
-        );
+    const container =
+        $("game-log");
 
 
-    if (!logPanel) {
+    if (!container) {
         return;
     }
 
 
     const entry =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
 
     entry.className =
@@ -1529,305 +987,458 @@ function log(
         color;
 
 
-    entry.innerText =
+    entry.textContent =
         `> ${message}`;
 
 
-    logPanel.appendChild(
-        entry
-    );
+    container.appendChild(entry);
 
 
-    /*
-     * Scroll to latest message.
-     */
-
-    logPanel.scrollTop =
-        logPanel.scrollHeight;
-
+    container.scrollTop =
+        container.scrollHeight;
 }
 
 
 /* =========================================================
-   DEATH
-========================================================= */
+   MOBILE LOG TOGGLE
+   ========================================================= */
 
-function triggerDeath(
-    reason
-) {
+function toggleLog() {
 
-    if (p.gameOver) {
+    const wrapper =
+        document.querySelector(
+            ".log-panel-wrapper"
+        );
+
+
+    if (!wrapper) {
         return;
     }
 
 
-    p.gameOver =
-        true;
-
-
-    p.curEn =
-        null;
-
-
-    /*
-     * Stop BGM.
-     */
-
-    if (
-        typeof stopBGM ===
-        "function"
-    ) {
-
-        stopBGM();
-
-    }
-
-
-    /*
-     * Death sound.
-     */
-
-    if (
-        typeof sfx !== "undefined" &&
-        typeof sfx.death === "function"
-    ) {
-
-        sfx.death();
-
-    }
-
-
-    /*
-     * Disable controls.
-     */
-
-    document
-        .querySelectorAll(
-            ".control-group button"
-        )
-        .forEach(button => {
-
-            button.disabled =
-                true;
-
-        });
-
-
-    /*
-     * Death reason.
-     */
-
-    const reasonUI =
-        document.getElementById(
-            "death-reason"
-        );
-
-
-    if (reasonUI) {
-
-        reasonUI.innerText =
-            reason;
-
-    }
-
-
-    /*
-     * Show death screen.
-     */
-
-    const deathScreen =
-        document.getElementById(
-            "death-screen"
-        );
-
-
-    if (deathScreen) {
-
-        deathScreen.style.display =
-            "flex";
-
-    }
-
-
-    log(
-        `💀 ${reason}`,
-        "var(--red)"
+    wrapper.classList.toggle(
+        "log-open"
     );
-
 }
 
 
 /* =========================================================
-   VICTORY
-========================================================= */
+   SWAP SCREEN
+   ========================================================= */
 
-function triggerVictory() {
+function showSwapScreen(item) {
 
-    if (p.gameOver) {
+    game.pendingItem =
+        item;
+
+
+    setText(
+        "new-item-name",
+        `${item.e}${item.n} (+${item.p})`
+    );
+
+
+    const list =
+        $("swap-list");
+
+
+    if (!list) {
         return;
     }
 
 
-    p.gameOver =
-        true;
+    list.innerHTML =
+        game.inventory
+            .map((existingItem, index) => {
+
+                return `
+                    <div
+                        class="inv-slot selectable"
+                        onclick="confirmSwap(${index})"
+                    >
+
+                        <span>
+                            ${existingItem.e}
+                            ${existingItem.n}
+                            (+${existingItem.p})
+                        </span>
+
+                        <span>
+                            🔄
+                        </span>
+
+                    </div>
+                `;
+            })
+            .join("");
 
 
-    p.curEn =
+    show("swap-screen");
+}
+
+
+/* =========================================================
+   CONFIRM SWAP
+   ========================================================= */
+
+function confirmSwap(index) {
+
+    if (!game.pendingItem) {
+        return;
+    }
+
+
+    if (
+        index < 0 ||
+        index >= game.inventory.length
+    ) {
+        return;
+    }
+
+
+    const oldItem =
+        game.inventory[index];
+
+
+    const newItem =
+        game.pendingItem;
+
+
+    game.inventory[index] =
+        newItem;
+
+
+    game.pendingItem =
         null;
 
 
-    /*
-     * Stop BGM.
-     */
-
-    if (
-        typeof stopBGM ===
-        "function"
-    ) {
-
-        stopBGM();
-
-    }
-
-
-    /*
-     * Victory sound.
-     */
-
-    if (
-        typeof sfx !== "undefined" &&
-        typeof sfx.victory ===
-        "function"
-    ) {
-
-        sfx.victory();
-
-    }
-
-
-    /*
-     * Disable controls.
-     */
-
-    document
-        .querySelectorAll(
-            ".control-group button"
-        )
-        .forEach(button => {
-
-            button.disabled =
-                true;
-
-        });
-
-
-    /*
-     * Show victory screen.
-     */
-
-    const winScreen =
-        document.getElementById(
-            "win-screen"
-        );
-
-
-    if (winScreen) {
-
-        winScreen.style.display =
-            "flex";
-
-    }
+    hide("swap-screen");
 
 
     log(
-        "🏆 LORD MUNCHING HAS FALLEN!",
+        `🔄 Replaced ${oldItem.n} with ${newItem.n}!`,
         "var(--gold)"
     );
-
-}
-
-
-/* =========================================================
-   RESET GAME STATE
-========================================================= */
-
-function resetGameState() {
-
-    p = {
-
-        race: "",
-
-        lvl: 1,
-
-        baseAtk: 0,
-
-        inv: [],
-
-        skillUsed: false,
-
-        skillActive: false,
-
-        curEn: null,
-
-        pendingItem: null,
-
-        gameOver: false
-
-    };
 
 
     updateUI();
 
+    endTurn();
 }
 
 
 /* =========================================================
-   INITIAL UI SETUP
-========================================================= */
+   CANCEL SWAP
+   ========================================================= */
+
+function cancelSwap() {
+
+    game.pendingItem =
+        null;
+
+
+    hide("swap-screen");
+
+
+    log(
+        "🗑️ New item discarded.",
+        "#888"
+    );
+
+
+    endTurn();
+}
+
+
+/* =========================================================
+   RANDOM ITEM REMOVAL
+   ========================================================= */
+
+function removeRandomItem() {
+
+    if (game.inventory.length === 0) {
+
+        log(
+            "🎒 Inventory is already empty.",
+            "#777"
+        );
+
+        return null;
+    }
+
+
+    const index =
+        Math.floor(
+            Math.random() *
+            game.inventory.length
+        );
+
+
+    const removed =
+        game.inventory.splice(
+            index,
+            1
+        )[0];
+
+
+    updateUI();
+
+
+    return removed;
+}
+
+
+/* =========================================================
+   CLEAR INVENTORY
+   ========================================================= */
+
+function clearInventory() {
+
+    const amount =
+        game.inventory.length;
+
+
+    game.inventory = [];
+
+
+    updateUI();
+
+
+    return amount;
+}
+
+
+/* =========================================================
+   RUN PENALTY
+   ========================================================= */
+
+function applyRunPenalty(type) {
+
+    /*
+     * type:
+     *
+     * "failure"
+     * "normal"
+     * "boss"
+     */
+
+
+    if (type === "failure") {
+
+        changeLevel(
+            -GAME_CONFIG.run.failurePenalty
+        );
+
+        return;
+    }
+
+
+    if (type === "boss") {
+
+        changeLevel(
+            -GAME_CONFIG.run.bossSuccessPenalty
+        );
+
+        return;
+    }
+
+
+    changeLevel(
+        -GAME_CONFIG.run.normalSuccessPenalty
+    );
+}
+
+
+/* =========================================================
+   CHECK DEATH
+   ========================================================= */
+
+function checkLevelDeath(reason) {
+
+    if (game.level <= 0) {
+
+        triggerDeath(
+            reason
+        );
+
+        return true;
+    }
+
+
+    return false;
+}
+
+
+/* =========================================================
+   ESCAPE ROLL MODIFIER
+   ========================================================= */
+
+function getRunRollModifier() {
+
+    if (game.race === "Elf") {
+        return 1;
+    }
+
+
+    return 0;
+}
+
+
+/* =========================================================
+   ENEMY TYPE
+   ========================================================= */
+
+function isBossEnemy() {
+
+    if (!game.currentEnemy) {
+        return false;
+    }
+
+
+    return (
+        game.currentEnemy.isBoss === true
+    );
+}
+
+
+/* =========================================================
+   RESET TURN STATE
+   ========================================================= */
+
+function resetTurnState() {
+
+    game.skillUsed = false;
+
+    game.skillActive = false;
+
+    game.turnLocked = false;
+
+    updateUI();
+}
+
+
+/* =========================================================
+   PAGE LOAD
+   ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
 
-        /*
-         * Hide controls until race is selected.
-         */
+        updateUI();
 
-        document
-            .querySelectorAll(
-                ".control-group"
-            )
-            .forEach(group => {
-
-                group.style.display =
-                    "none";
-
-            });
-
+        updateSkillButton();
 
         /*
-         * Show start screen.
+         * Make sure the log starts closed
+         * on mobile.
          */
 
-        const overlay =
-            document.getElementById(
-                "overlay"
+        const logWrapper =
+            document.querySelector(
+                ".log-panel-wrapper"
             );
 
 
-        if (overlay) {
+        if (
+            logWrapper &&
+            window.innerWidth <= 767
+        ) {
 
-            overlay.style.display =
-                "flex";
-
+            logWrapper.classList.remove(
+                "log-open"
+            );
         }
-
-
-        /*
-         * Initial UI.
-         */
-
-        updateUI();
-
     }
 );
+
+
+/* =========================================================
+   GLOBAL COMPATIBILITY
+   ========================================================= */
+
+/*
+ * These aliases make it easier for
+ * combat.js / enemies.js / item.js
+ * to interact with the central state.
+ */
+
+window.game = game;
+
+window.GAME_CONFIG =
+    GAME_CONFIG;
+
+window.calculateAtk =
+    calculateAttack;
+
+window.calculateAttack =
+    calculateAttack;
+
+window.updateUI =
+    updateUI;
+
+window.showControls =
+    showControls;
+
+window.endTurn =
+    endTurn;
+
+window.resetArena =
+    resetArena;
+
+window.triggerDeath =
+    triggerDeath;
+
+window.triggerVictory =
+    triggerVictory;
+
+window.changeLevel =
+    changeLevel;
+
+window.log =
+    log;
+
+window.beginCombat =
+    beginCombat;
+
+window.setCurrentEnemy =
+    setCurrentEnemy;
+
+window.setCurrentEvent =
+    setCurrentEvent;
+
+window.useSkill =
+    useSkill;
+
+window.openDoor =
+    openDoor;
+
+window.confirmSwap =
+    confirmSwap;
+
+window.cancelSwap =
+    cancelSwap;
+
+window.showSwapScreen =
+    showSwapScreen;
+
+window.removeRandomItem =
+    removeRandomItem;
+
+window.clearInventory =
+    clearInventory;
+
+window.applyRunPenalty =
+    applyRunPenalty;
+
+window.checkLevelDeath =
+    checkLevelDeath;
+
+window.getRunRollModifier =
+    getRunRollModifier;
+
+window.isBossEnemy =
+    isBossEnemy;
+
+window.toggleLog =
+    toggleLog;
